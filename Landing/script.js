@@ -168,9 +168,10 @@
       const y = e.clientY - rect.top;
 
       // Perspective already comes from .verify-card-wrapper in CSS, so the
-      // transform here only needs the rotation itself.
-      const rotateY = ((x / rect.width) - 0.5) * 6;
-      const rotateX = (0.5 - y / rect.height) * 6;
+      // transform here only needs the rotation itself. Kept small (5deg
+      // max) so the tilt reads as a subtle response, not a toy.
+      const rotateY = ((x / rect.width) - 0.5) * 5;
+      const rotateX = (0.5 - y / rect.height) * 5;
 
       verifyCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
       verifyCard.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
