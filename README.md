@@ -26,6 +26,3 @@ After collecting feedback from Reddit and other developer communities, I'm worki
 - [ ] Release the first MVP
 - [ ] Launch the browser extension
 
-## License
-
-MIT
