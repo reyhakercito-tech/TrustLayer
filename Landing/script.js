@@ -93,12 +93,26 @@
       waitlistEmail.focus();
       return;
     }
-    try {
-      window.localStorage.setItem(STORAGE_KEY, 'true');
-    } catch (err) {
-      // ignore — still show the joined state for this session
-    }
-    setJoinedState();
+
+    const payload = new URLSearchParams();
+    payload.append('email', waitlistEmail.value.trim());
+
+    fetch(SHEET_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: payload
+    })
+    .then(() => {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, 'true');
+      } catch (err) {
+        // ignore — still show the joined state for this session
+      }
+      setJoinedState();
+    })
+    .catch((err) => {
+      console.error(err);
+    });
   });
 
   /* ---------- Signature verify-card loop ---------- */
