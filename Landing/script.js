@@ -133,23 +133,58 @@
 
   /* ---------- Signature verify-card loop ---------- */
   const verifyCard = document.querySelector('.verify-card');
+
   if (verifyCard) {
-    const states = ['error', 'warning', 'verified'];
-    if (prefersReducedMotion) {
-      verifyCard.dataset.state = 'verified';
-    } else {
-      let i = 0;
-      const cycle = () => {
-        i = (i + 1) % states.length;
-        verifyCard.dataset.state = states[i];
-      };
-      // first change happens after the hero settles, then loops
-      window.setTimeout(() => {
-        cycle();
-        window.setInterval(cycle, 2600);
-      }, 1600);
-    }
+  const states = ['error', 'warning', 'verified'];
+
+  if (prefersReducedMotion) {
+    verifyCard.dataset.state = 'verified';
+  } else {
+    let i = 0;
+
+    const cycle = () => {
+      i = (i + 1) % states.length;
+      verifyCard.dataset.state = states[i];
+    };
+
+    window.setTimeout(() => {
+      cycle();
+      window.setInterval(cycle, 2600);
+    }, 1600);
   }
+
+  // ---------- Verify card: instant tilt tracking + working cursor sheen ----------
+  if (!prefersReducedMotion) {
+
+    verifyCard.addEventListener('mouseenter', () => {
+      // Kill only the transform transition while tracking — box-shadow
+      // keeps easing in on hover, just the tilt itself becomes instant.
+      verifyCard.style.transition = 'box-shadow 0.4s var(--ease)';
+    });
+
+    verifyCard.addEventListener('mousemove', (e) => {
+      const rect = verifyCard.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Perspective already comes from .verify-card-wrapper in CSS, so the
+      // transform here only needs the rotation itself.
+      const rotateY = ((x / rect.width) - 0.5) * 6;
+      const rotateX = (0.5 - y / rect.height) * 6;
+
+      verifyCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
+      verifyCard.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
+      verifyCard.style.setProperty('--my', `${(y / rect.height) * 100}%`);
+    });
+
+    verifyCard.addEventListener('mouseleave', () => {
+      // Restore the eased CSS transition only for the return to rest.
+      verifyCard.style.transition = '';
+      verifyCard.style.transform = 'rotateX(0deg) rotateY(0deg) translateY(0)';
+    });
+
+  }
+}
 
   /* ---------- Scroll reveal for sections ---------- */
   const revealTargets = document.querySelectorAll('.social-proof, .accordion-item, .footer');
@@ -171,4 +206,6 @@
   } else {
     revealTargets.forEach((el) => el.classList.add('in-view'));
   }
+
+
 })();
