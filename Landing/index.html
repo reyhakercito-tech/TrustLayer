@@ -15,7 +15,7 @@
 <nav class="nav" id="nav">
   <div class="nav-inner">
     <span class="nav-logo">TrustLayer</span>
-    <button class="nav-cta" data-scroll-to="hero-cta">Join Waitlist</button>
+    <button class="nav-cta" id="navCta" data-scroll-to="hero-cta">Join Waitlist</button>
   </div>
 </nav>
  
@@ -67,11 +67,13 @@
           <pre class="verify-code"><code><span class="c-muted">1</span>  <span class="c-kw">import</span> { verifyToken } <span class="c-kw">from</span> <span class="c-str">'@supabase/ssr'</span>
 <span class="c-muted">2</span>
 <span class="c-muted">3</span>  <span class="c-kw">const</span> session = <span class="verify-target">verifyToken.decodeAndCheck</span><span class="c-punct">(</span>token<span class="c-punct">)</span></code></pre>
-          <div class="verify-tag verify-tag-error" id="verifyTagError">
-            <span class="tag-icon">!</span> No matching export in package docs
-          </div>
-          <div class="verify-tag verify-tag-success" id="verifyTagSuccess">
-            <span class="tag-icon">✓</span> Matches official source — verified
+          <div class="verify-tags">
+            <div class="verify-tag verify-tag-error" id="verifyTagError">
+              <span class="tag-icon">!</span> No matching export in package docs
+            </div>
+            <div class="verify-tag verify-tag-success" id="verifyTagSuccess">
+              <span class="tag-icon">✓</span> Matches official source — verified
+            </div>
           </div>
         </div>
       </div>
