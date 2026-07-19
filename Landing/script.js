@@ -50,6 +50,7 @@
   const waitlistEmail = document.getElementById('waitlistEmail');
 
   const STORAGE_KEY = 'trustlayer_waitlist_joined';
+  const navCta = document.getElementById('navCta');
 
   function setJoinedState() {
     ctaButton.textContent = 'On the waitlist ✓';
@@ -57,6 +58,11 @@
     ctaButton.disabled = true;
     ctaWrap.classList.remove('open');
     ctaWrap.classList.add('success');
+
+    if (navCta) {
+      navCta.textContent = 'On the waitlist ✓';
+      navCta.classList.add('joined');
+    }
   }
 
   // Returning visitor who already joined: skip straight to the joined state.
