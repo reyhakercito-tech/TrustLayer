@@ -49,9 +49,28 @@
   const waitlistCancel = document.getElementById('waitlistCancel');
   const waitlistEmail = document.getElementById('waitlistEmail');
 
+  const STORAGE_KEY = 'trustlayer_waitlist_joined';
+
+  function setJoinedState() {
+    ctaButton.textContent = 'On the waitlist ✓';
+    ctaButton.classList.add('joined');
+    ctaButton.disabled = true;
+    ctaWrap.classList.remove('open');
+    ctaWrap.classList.add('success');
+  }
+
+  // Returning visitor who already joined: skip straight to the joined state.
+  try {
+    if (window.localStorage.getItem(STORAGE_KEY) === 'true') {
+      setJoinedState();
+    }
+  } catch (err) {
+    // localStorage unavailable (private mode, blocked cookies, etc.) — form still works, just won't persist.
+  }
+
   ctaButton.addEventListener('click', () => {
+    if (ctaButton.classList.contains('joined')) return;
     ctaWrap.classList.add('open');
-    ctaWrap.classList.remove('success');
     window.setTimeout(() => waitlistEmail.focus(), 350);
   });
 
@@ -65,8 +84,12 @@
       waitlistEmail.focus();
       return;
     }
-    ctaWrap.classList.remove('open');
-    ctaWrap.classList.add('success');
+    try {
+      window.localStorage.setItem(STORAGE_KEY, 'true');
+    } catch (err) {
+      // ignore — still show the joined state for this session
+    }
+    setJoinedState();
   });
 
   /* ---------- Signature verify-card loop ---------- */
