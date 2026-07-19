@@ -101,19 +101,20 @@
   /* ---------- Signature verify-card loop ---------- */
   const verifyCard = document.querySelector('.verify-card');
   if (verifyCard) {
+    const states = ['error', 'warning', 'verified'];
     if (prefersReducedMotion) {
-      verifyCard.classList.add('verified');
+      verifyCard.dataset.state = 'verified';
     } else {
-      let verified = false;
+      let i = 0;
       const cycle = () => {
-        verified = !verified;
-        verifyCard.classList.toggle('verified', verified);
+        i = (i + 1) % states.length;
+        verifyCard.dataset.state = states[i];
       };
-      // first flip happens after the hero settles, then loops
+      // first change happens after the hero settles, then loops
       window.setTimeout(() => {
         cycle();
-        window.setInterval(cycle, 3200);
-      }, 1400);
+        window.setInterval(cycle, 2600);
+      }, 1600);
     }
   }
 
