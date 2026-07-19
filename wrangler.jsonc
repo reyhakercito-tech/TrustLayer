@@ -1,0 +1,8 @@
+{
+  "name": "trustlayer",
+  "compatibility_date": "2026-07-19",
+  "assets": {
+    "directory": "./Landing",
+    "not_found_handling": "404-page"
+  }
+}
