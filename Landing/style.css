@@ -350,24 +350,26 @@ a { color: inherit; }
   font-weight: 700;
 }
  
-/* ===================== SIGNATURE VERIFY CARD =====================
-   This card IS the product, so it gets the most considered
-   treatment on the page: layered shadows (a tight contact shadow,
-   a mid shadow, a large soft ambient one) instead of one flat
-   drop-shadow, a cursor-reactive sheen that's actually wired up,
-   and a tilt that tracks the mouse instantly and only eases on
-   the way back to rest — the same feel as tilting a physical card.
+/* ===================== SIGNATURE DEMO WINDOW =====================
+   This IS the product explanation, so it carries the most
+   considered treatment on the page. It is one window, not four
+   cards: the chrome never changes, only what's inside it does.
+   Every motion below answers a state change — nothing spins,
+   floats, or plays for its own sake. If you strip the copy out
+   of the whole landing page, this alone should say what
+   TrustLayer does.
 */
  
-.verify-card-wrapper {
+.demo-wrapper {
   width: 100%;
-  perspective: 1200px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  opacity: 0;
+  animation: rise 0.9s var(--ease) 0.32s forwards;
 }
  
-.verify-card {
+.demo-window {
   position: relative;
   width: min(900px, 92vw, 100%);
   margin: 0 auto;
@@ -387,18 +389,12 @@ a { color: inherit; }
     0 40px 72px -16px rgba(0, 0, 0, 0.3),
     inset 0 1px rgba(255, 255, 255, 0.06);
  
-  opacity: 0;
-  animation: rise 0.9s var(--ease) 0.32s forwards;
- 
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  cursor: default;
- 
-  transition: transform 0.6s var(--ease), box-shadow 0.4s var(--ease);
+  transition: box-shadow 0.4s var(--ease);
 }
  
-.verify-card:hover {
+.demo-window.is-done { cursor: pointer; }
+ 
+.demo-window.is-done:hover {
   box-shadow:
     0 1px 1px rgba(0, 0, 0, 0.05),
     0 3px 8px rgba(0, 0, 0, 0.1),
@@ -407,21 +403,7 @@ a { color: inherit; }
     inset 0 1px rgba(255, 255, 255, 0.06);
 }
  
-/* Cursor sheen — position set by JS via --mx / --my on mousemove.
-   Kept faint: a suggestion of light on brushed metal, not a shine. */
-.verify-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.09), transparent 40%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
- 
-.verify-card:hover::after { opacity: 1; }
- 
-.verify-card-head {
+.demo-window-head {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -436,55 +418,182 @@ a { color: inherit; }
   background: rgba(255, 255, 255, 0.16);
 }
  
-.verify-filename {
+/* The one dot that carries meaning — grey while the assistant is
+   answering, violet while TrustLayer is working, teal once verified.
+   Same three-color logic as the rest of the page, just compressed
+   into a single pixel of state. */
+.demo-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 0.5s var(--ease), box-shadow 0.5s var(--ease);
+}
+ 
+.demo-window[data-phase="2"] .demo-dot,
+.demo-window[data-phase="3"] .demo-dot {
+  background: var(--violet);
+  box-shadow: 0 0 0 3px rgba(124, 92, 250, 0.18);
+}
+ 
+.demo-window[data-phase="4"] .demo-dot {
+  background: var(--teal);
+  box-shadow: 0 0 0 3px rgba(20, 184, 162, 0.18);
+}
+ 
+.demo-window-label {
   margin-left: 8px;
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: -0.01em;
   color: rgba(255, 255, 255, 0.42);
+  transition: opacity 0.3s var(--ease);
 }
  
-.verify-card-body {
+.demo-replay {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.32);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease), color 0.3s var(--ease), background 0.3s var(--ease);
+}
+ 
+.demo-window.is-done .demo-replay {
+  opacity: 1;
+  pointer-events: auto;
+}
+ 
+.demo-replay:hover { color: rgba(255, 255, 255, 0.75); background: rgba(255, 255, 255, 0.08); }
+ 
+.demo-window-body {
+  position: relative;
   padding: 20px 22px 22px;
   text-align: left;
-  position: relative;
+  overflow: hidden;
+  /* Fixed so the window itself never resizes as the content
+     changes — the frame stays put, only what's inside it moves.
+     Sized to the tallest state (question + 9 lines + verdict tag)
+     with headroom to spare, so nothing ever clips or scrolls. */
+  height: 340px;
 }
  
-.verify-code {
+/* Two views only: the code block (states 1, 2 and 4 all live here,
+   unchanged, just mutating) and the prompt detour (state 3). Most
+   of the sequence never touches this transition at all — that's
+   deliberate, it's what keeps it feeling like one application
+   instead of a slideshow. */
+.demo-view {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.55s var(--ease), transform 0.55s var(--ease);
+}
+ 
+.demo-view.is-active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+ 
+.demo-line-user {
+  font-size: 13px;
+  letter-spacing: -0.005em;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 14px;
+  transition: color 0.4s var(--ease);
+}
+ 
+.demo-line-user.is-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.36);
+}
+ 
+.demo-meta {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.36);
+  margin-bottom: 14px;
+}
+ 
+.demo-code {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 12.5px;
-  line-height: 1.75;
   letter-spacing: -0.005em;
   color: rgba(255, 255, 255, 0.82);
+  overflow: hidden;
+}
+ 
+.d-line {
+  line-height: 1.78;
   white-space: pre;
-  overflow-x: auto;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: color 0.5s var(--ease);
+}
+ 
+/* Each line reveals on its own the first time the window plays —
+   a generated-code feel without typing a single character. */
+.demo-view-code.is-active .demo-code .d-line {
+  animation: lineIn 0.45s var(--ease) forwards;
+  animation-delay: calc(0.05s + var(--stagger, 0) * 0.1s);
+}
+ 
+@keyframes lineIn {
+  to { opacity: 1; transform: translateY(0); }
 }
  
 /* A quieter, more editorial syntax palette — closer to a code
-   screenshot in a GitHub README than an editor theme. One accent
-   per token role, nothing saturated enough to compete with the
-   verification tags below it. */
-.c-muted { color: rgba(255, 255, 255, 0.22); }
+   screenshot in a GitHub README than an editor theme. */
 .c-kw { color: #8fb8ff; }
 .c-str { color: #9fd9ae; }
 .c-punct { color: rgba(255, 255, 255, 0.45); }
  
-.verify-target {
-  border-bottom: 2px solid var(--error);
-  transition: border-color 0.6s var(--ease), color 0.6s var(--ease);
+/* Verification pass — every line dims to "not checked yet," then
+   settles back to full brightness as TrustLayer reaches it. The
+   flagged line settles into red instead. Same lines, same DOM,
+   just a color the state moves through. */
+.demo-code.is-checking .d-line { color: rgba(255, 255, 255, 0.36); }
+.demo-code.is-checking .d-line.d-checked { color: rgba(255, 255, 255, 0.82); }
+.demo-code.is-checking .d-line-flaggable.d-checked { color: #ff8a80; }
+ 
+/* The one line TrustLayer flagged collapses away once the fix has
+   been applied — the code doesn't get swapped for a new block, it
+   just loses the line that was wrong. */
+.d-line-fold {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.6s var(--ease);
 }
  
-.verify-card[data-state="warning"] .verify-target { border-color: var(--warning); }
-.verify-card[data-state="verified"] .verify-target { border-color: var(--teal); }
+.d-line-fold.is-collapsed { grid-template-rows: 0fr; }
  
-.verify-tags {
+.d-line-fold-inner { overflow: hidden; min-height: 0; }
+ 
+.demo-verdict-slot {
   position: relative;
-  margin-top: var(--sp-4);
+  margin-top: 14px;
   min-height: 40px;
 }
  
-.verify-tag {
+.demo-verdict {
   position: absolute;
   inset: 0;
   display: flex;
@@ -492,12 +601,24 @@ a { color: inherit; }
   gap: 8px;
   padding: 9px 13px;
   border-radius: var(--radius-sm);
+  background: rgba(255, 69, 58, 0.12);
+  color: #ff8a80;
   font-size: 12.5px;
   letter-spacing: -0.005em;
   font-family: var(--font-mono);
   opacity: 0;
   transform: translateY(4px);
   transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+ 
+.demo-verdict.is-shown { opacity: 1; transform: translateY(0); }
+ 
+.demo-verdict-success { background: rgba(20, 184, 162, 0.14); color: #6be0d0; }
+ 
+/* Arrives quietly, after the corrected code has had a moment to
+   sit there and just look right — no celebration, it simply exists. */
+.demo-verdict-final.is-shown {
+  transition: opacity 0.6s var(--ease) 0.25s, transform 0.6s var(--ease) 0.25s;
 }
  
 .tag-icon {
@@ -514,24 +635,81 @@ a { color: inherit; }
   color: #fff;
 }
  
-.verify-tag-error { background: rgba(255, 69, 58, 0.12); color: #ff8a80; }
 .tag-icon-error { background: var(--error); }
- 
-.verify-tag-warning { background: rgba(255, 159, 10, 0.14); color: #ffc178; }
-.tag-icon-warning { background: var(--warning); }
- 
-.verify-tag-success { background: rgba(20, 184, 162, 0.14); color: #6be0d0; }
 .tag-icon-success { background: var(--teal); }
  
-.verify-card[data-state="error"] .verify-tag-error,
-.verify-card[data-state="warning"] .verify-tag-warning,
-.verify-card[data-state="verified"] .verify-tag-success {
-  opacity: 1;
-  transform: translateY(0);
+/* Prompt view — the corrected instruction, written out word by
+   word so it reads as generated, not pasted. */
+.demo-prompt {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.85;
+  letter-spacing: -0.005em;
+  color: rgba(255, 255, 255, 0.82);
+}
+ 
+.demo-prompt-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 1px;
+  background: rgba(255, 255, 255, 0.5);
+  vertical-align: -2px;
+  animation: caretBlink 0.9s steps(1) infinite;
+}
+ 
+@keyframes caretBlink {
+  50% { opacity: 0; }
+}
+ 
+/* ----- The mental model, not a diagram -----
+   Four words, one focus. The sliding bar is the only arrow this
+   flow needs — it shows the same left-to-right progress an arrow
+   would, without adding a shape that has to be understood first. */
+ 
+.demo-flow {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3) var(--sp-6);
+  margin-top: var(--sp-8);
+  padding: 0 var(--sp-5);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: rise 0.8s var(--ease) 0.5s forwards;
+}
+ 
+.demo-flow-step {
+  white-space: nowrap;
+  color: var(--ink-tertiary);
+  transition: color 0.5s var(--ease), font-weight 0.5s var(--ease);
+}
+ 
+.demo-flow-step.is-active {
+  color: var(--ink);
+  font-weight: 700;
+}
+ 
+.demo-flow-bar {
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: var(--ink);
+  border-radius: 2px;
+  transform: translateX(0);
+  transition: transform 0.6s var(--ease), width 0.6s var(--ease);
 }
  
 @media (max-width: 480px) {
-  .verify-tags { min-height: 56px; }
+  .demo-window-body { height: 316px; }
+  .demo-flow-bar { display: none; }
 }
  
 /* ===================== SOCIAL PROOF ===================== */
@@ -857,8 +1035,8 @@ a { color: inherit; }
   .subhead { max-width: 400px; }
   .cta-wrap { margin-bottom: var(--sp-12); }
  
-  .verify-card-body { padding: var(--sp-4) var(--sp-4) var(--sp-5); }
-  .verify-code { font-size: 11.5px; }
+  .demo-window-body { padding: var(--sp-4) var(--sp-4) var(--sp-5); }
+  .demo-code, .demo-prompt { font-size: 11.5px; }
  
   .accordions { padding: 0 var(--sp-5); }
   .nav-inner { padding: 0 var(--sp-5); }
