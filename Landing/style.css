@@ -178,14 +178,17 @@ a { color: inherit; }
 .cta-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(10, 132, 255, 0.36); }
 .cta-pill:active { transform: translateY(0) scale(0.97); }
 
-.cta-pill.joined {
+.cta-pill.joined,
+.nav-cta.joined {
   background: linear-gradient(135deg, var(--teal), #0f9d8c);
   box-shadow: 0 8px 24px rgba(20, 184, 162, 0.28);
   cursor: default;
 }
 
 .cta-pill.joined:hover,
-.cta-pill.joined:active {
+.cta-pill.joined:active,
+.nav-cta.joined:hover,
+.nav-cta.joined:active {
   transform: none;
   box-shadow: 0 8px 24px rgba(20, 184, 162, 0.28);
 }
@@ -321,6 +324,7 @@ a { color: inherit; }
 .verify-card-body {
   padding: 18px 20px 20px;
   text-align: left;
+  position: relative;
 }
 
 .verify-code {
@@ -346,11 +350,20 @@ a { color: inherit; }
   border-color: var(--teal);
 }
 
+.verify-tags {
+  position: relative;
+  margin-top: 14px;
+  min-height: 40px;
+}
+
 .verify-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 14px;
   padding: 9px 12px;
   border-radius: var(--radius-sm);
   font-size: 12.5px;
@@ -374,7 +387,8 @@ a { color: inherit; }
 .verify-tag-error {
   background: rgba(255, 69, 58, 0.12);
   color: #ff8a80;
-  position: absolute;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .verify-tag-error .tag-icon { background: var(--error); color: #fff; }
@@ -384,18 +398,16 @@ a { color: inherit; }
   color: #6be0d0;
   opacity: 0;
   transform: translateY(4px);
-  position: absolute;
 }
 
 .verify-tag-success .tag-icon { background: var(--teal); color: #fff; }
 
-.verify-card-body { position: relative; }
-.verify-card-body .verify-tag { position: relative; }
-
-.verify-card:not(.verified) .verify-tag-success { opacity: 0; }
 .verify-card.verified .verify-tag-error { opacity: 0; transform: translateY(-4px); }
-.verify-card.verified .verify-tag-success { opacity: 1; transform: translateY(0); position: static; }
-.verify-card:not(.verified) .verify-tag-success { position: absolute; top: 0; left: 0; right: 0; }
+.verify-card.verified .verify-tag-success { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 480px) {
+  .verify-tags { min-height: 56px; }
+}
 
 /* ===================== SOCIAL PROOF ===================== */
 
