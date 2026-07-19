@@ -1,6 +1,9 @@
 (() => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Paste your Google Apps Script "exec" URL here (see setup steps).
+  const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxxd5hani_La71DSZ6jgm4CDnE6uq_JNpbhThRdqlYtDU9_hT0WS-_c5vRUQzCGw9cK/exec';
+
   /* ---------- Nav blur on scroll ---------- */
   const nav = document.getElementById('nav');
   const onScroll = () => {
