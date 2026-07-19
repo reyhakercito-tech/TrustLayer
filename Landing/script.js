@@ -1,0 +1,111 @@
+(() => {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Nav blur on scroll ---------- */
+  const nav = document.getElementById('nav');
+  const onScroll = () => {
+    if (window.scrollY > 12) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* ---------- Nav CTA scrolls to hero CTA ---------- */
+  document.querySelectorAll('[data-scroll-to]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.scrollTo);
+      if (target) target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
+    });
+  });
+
+  /* ---------- Generic accordion behaviour (top-level + FAQ) ---------- */
+  function wireAccordion(itemSelector, triggerSelector) {
+    document.querySelectorAll(itemSelector).forEach((item) => {
+      const trigger = item.querySelector(triggerSelector);
+      if (!trigger) return;
+      trigger.addEventListener('click', () => {
+        const isOpen = item.hasAttribute('data-open');
+        if (isOpen) {
+          item.removeAttribute('data-open');
+          trigger.setAttribute('aria-expanded', 'false');
+        } else {
+          item.setAttribute('data-open', '');
+          trigger.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+  }
+
+  wireAccordion('.accordion-item', '.accordion-trigger');
+  wireAccordion('.faq-item', '.faq-trigger');
+
+  /* ---------- Waitlist inline form ---------- */
+  const ctaWrap = document.getElementById('hero-cta');
+  const ctaButton = document.getElementById('ctaButton');
+  const waitlistForm = document.getElementById('waitlistForm');
+  const waitlistCancel = document.getElementById('waitlistCancel');
+  const waitlistEmail = document.getElementById('waitlistEmail');
+
+  ctaButton.addEventListener('click', () => {
+    ctaWrap.classList.add('open');
+    ctaWrap.classList.remove('success');
+    window.setTimeout(() => waitlistEmail.focus(), 350);
+  });
+
+  waitlistCancel.addEventListener('click', () => {
+    ctaWrap.classList.remove('open');
+  });
+
+  waitlistForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!waitlistEmail.checkValidity()) {
+      waitlistEmail.focus();
+      return;
+    }
+    ctaWrap.classList.remove('open');
+    ctaWrap.classList.add('success');
+  });
+
+  /* ---------- Signature verify-card loop ---------- */
+  const verifyCard = document.querySelector('.verify-card');
+  if (verifyCard) {
+    if (prefersReducedMotion) {
+      verifyCard.classList.add('verified');
+    } else {
+      let verified = false;
+      const cycle = () => {
+        verified = !verified;
+        verifyCard.classList.toggle('verified', verified);
+      };
+      // first flip happens after the hero settles, then loops
+      window.setTimeout(() => {
+        cycle();
+        window.setInterval(cycle, 3200);
+      }, 1400);
+    }
+  }
+
+  /* ---------- Scroll reveal for sections ---------- */
+  const revealTargets = document.querySelectorAll('.social-proof, .accordion-item, .footer');
+  revealTargets.forEach((el) => el.classList.add('reveal'));
+
+  if ('IntersectionObserver' in window && !prefersReducedMotion) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+    revealTargets.forEach((el) => observer.observe(el));
+  } else {
+    revealTargets.forEach((el) => el.classList.add('in-view'));
+  }
+})();
