@@ -1,9 +1,8 @@
-@@ -1,168 +1,180 @@
 (() => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Paste your Google Apps Script "exec" URL here (see setup steps).
-  const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxxd5hani_La71DSZ6jgm4CDnE6uq_JNpbhThRdqlYtDU9_hT0WS-_c5vRUQzCGw9cK/exec';
+  const SHEET_ENDPOINT = 'https acabado en /exec';
 
   /* ---------- Nav blur on scroll ---------- */
   const nav = document.getElementById('nav');
@@ -56,15 +55,15 @@
   const STORAGE_KEY = 'trustlayer_waitlist_joined';
   const navCta = document.getElementById('navCta');
 
-  function setJoinedState() {
-    ctaButton.textContent = 'On the waitlist ✓';
+  function setJoinedState(customText = 'On the waitlist ✓') {
+    ctaButton.textContent = customText;
     ctaButton.classList.add('joined');
     ctaButton.disabled = true;
     ctaWrap.classList.remove('open');
     ctaWrap.classList.add('success');
 
     if (navCta) {
-      navCta.textContent = 'On the waitlist ✓';
+      navCta.textContent = customText;
       navCta.classList.add('joined');
     }
   }
@@ -100,49 +99,31 @@
     
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending...';
       submitBtn.textContent = 'Verifying...';
     }
 
     const payload = new URLSearchParams();
     payload.append('email', waitlistEmail.value.trim());
 
-    // Quitamos 'mode: no-cors' para poder leer si el correo ya estaba repetido en el Sheet
     fetch(SHEET_ENDPOINT, {
       method: 'POST',
-      mode: 'no-cors',
       body: payload
     })
-    .then(() => {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, 'true');
-      } catch (err) {
-        // ignore — still show the joined state for this session
     .then(response => response.json())
     .then(data => {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, 'true');
+      } catch (err) {}
+
       if (data.status === 'duplicate') {
-        alert("Sorry! You're already on the waitlist.");
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = originalBtnText || 'Join Waitlist';
-        }
+        // En lugar de una alerta, cambiamos el botón visualmente
+        setJoinedState('Already on the waitlist ✓');
       } else {
-        try {
-          window.localStorage.setItem(STORAGE_KEY, 'true');
-        } catch (err) {
-          // ignore — still show the joined state for this session
-        }
-        setJoinedState();
+        setJoinedState('On the waitlist ✓');
       }
-      setJoinedState();
     })
     .catch((err) => {
       console.error(err);
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Join Waitlist';
-      }
-      // Fallback por si el navegador bloquea la lectura del JSON por CORS pero sí guardó el dato
       try {
         window.localStorage.setItem(STORAGE_KEY, 'true');
       } catch (e) {}
