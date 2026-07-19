@@ -94,6 +94,12 @@
       return;
     }
 
+    const submitBtn = waitlistForm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+    }
+
     const payload = new URLSearchParams();
     payload.append('email', waitlistEmail.value.trim());
 
@@ -112,6 +118,10 @@
     })
     .catch((err) => {
       console.error(err);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Join Waitlist';
+      }
     });
   });
 
