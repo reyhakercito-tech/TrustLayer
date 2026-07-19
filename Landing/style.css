@@ -202,6 +202,8 @@ a { color: inherit; }
 }
 
 .waitlist-form {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -212,13 +214,58 @@ a { color: inherit; }
   opacity: 0;
   transform: scale(0.94);
   pointer-events: none;
-  transition: opacity 0.4s var(--ease-apple), transform 0.4s var(--ease-apple);
+  transition: opacity 0.4s var(--ease-apple), transform 0.4s var(--ease-apple), border-color 0.4s var(--ease-apple), background 0.4s var(--ease-apple);
 }
 
 .cta-wrap.open .waitlist-form {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
+}
+
+.form-inputs-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  transition: opacity 0.3s var(--ease-apple), transform 0.3s var(--ease-apple);
+}
+
+.form-feedback-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  transition: opacity 0.4s var(--ease-apple), transform 0.4s var(--ease-apple);
+  padding: 0 24px;
+  white-space: nowrap;
+}
+
+.cta-wrap.show-feedback .form-inputs-wrap {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+.cta-wrap.show-feedback .form-feedback-msg {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.cta-wrap.show-feedback .waitlist-form {
+  border-color: transparent;
+  background: transparent;
 }
 
 .waitlist-input {
