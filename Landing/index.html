@@ -1,508 +1,254 @@
 <!DOCTYPE html>
-
 <html lang="es">
-
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>TrustLayer — Stop debugging AI hallucinations</title>
-
-<meta name="description" content="TrustLayer checks your AI's code, commands, and setup steps against the official docs — Docker, Immich, Nextcloud, Node.js, Python, and more — then hands you back a prompt to get it right.">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrustLayer — Stop debugging AI hallucinations</title>
+  <meta name="description" content="TrustLayer checks your AI's code, commands, and setup steps against the official docs — Docker, Immich, Nextcloud, Node.js, Python, and more — then hands you back a prompt to get it right.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
  
-
 <nav class="nav" id="nav">
-
   <div class="nav-inner">
-
     <span class="nav-logo">TrustLayer</span>
-
     <button class="nav-cta" id="navCta" data-scroll-to="hero-cta">Join Waitlist</button>
-
   </div>
-
 </nav>
-
  
-
 <main>
-
  
-
   <!-- HERO -->
-
   <header class="hero">
-
     <div class="hero-inner">
-
       <p class="wordmark">TrustLayer</p>
-
       <h1 class="headline">Stop debugging<br>AI hallucinations.</h1>
-
-        <p class="subhead">
-
-        AI-generated code can look perfectly valid —<br>
-       
-        until it isn't. TrustLayer checks AI responses<br>
-        
-        against official documentation before you waste time debugging.
-
-      </p>
-
+      <p class="subhead">AI-generated code can look perfectly valid — until it isn't. TrustLayer checks AI responses against official documentation before you waste time debugging.</p>
  
-
       <div class="cta-wrap" id="hero-cta">
-
         <button class="cta-pill" id="ctaButton">
-
           <span>Join the Waitlist</span>
-
         </button>
-
  
-
         <form class="waitlist-form" id="waitlistForm" novalidate>
-
           <input
-
             type="email"
-
             id="waitlistEmail"
-
             class="waitlist-input"
-
             placeholder="you@company.com"
-
             aria-label="Email address"
-
             required
-
           >
-
           <button type="submit" class="waitlist-submit">Notify me</button>
-
           <button type="button" class="waitlist-cancel" id="waitlistCancel" aria-label="Cancel">✕</button>
-
         </form>
-
  
-
         <p class="waitlist-success" id="waitlistSuccess" role="status">
-
           <span class="success-check">✓</span> You're on the list — we'll verify you're not a bot before the launch email does the rest.
-
         </p>
-
       </div>
-
+    </div>
  
-
-      <!-- Signature element: live code verification card -->
-
+    <!-- Signature element: live code verification card -->
+    <div class="verify-card-wrapper">
       <div class="verify-card" data-state="error" aria-hidden="true">
-
         <div class="verify-card-head">
-
           <span class="verify-dot"></span>
-
           <span class="verify-dot"></span>
-
           <span class="verify-dot"></span>
-
           <span class="verify-filename">auth.ts</span>
-
         </div>
-
+ 
         <div class="verify-card-body">
-
           <pre class="verify-code"><code><span class="c-muted">1</span>  <span class="c-kw">import</span> { verifyToken } <span class="c-kw">from</span> <span class="c-str">'@supabase/ssr'</span>
-
-           
 <span class="c-muted">2</span>  <span class="c-kw">const</span> session = <span class="verify-target">verifyToken.decodeAndCheck</span><span class="c-punct">(</span>token<span class="c-punct">)</span></code></pre>
-
+ 
           <div class="verify-tags">
-
             <div class="verify-tag verify-tag-error">
-
               <span class="tag-icon tag-icon-error">✗</span> Not found in package docs
-
             </div>
-
             <div class="verify-tag verify-tag-warning">
-
               <span class="tag-icon tag-icon-warning">⚠</span> Contradicts official documentation
-
             </div>
-
             <div class="verify-tag verify-tag-success">
-
               <span class="tag-icon tag-icon-success">✓</span> Matches official source — verified
-
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
-
   </header>
-
  
-
   <!-- SOCIAL PROOF -->
-
   <section class="social-proof">
-
     <p class="social-eyebrow">Built in public.</p>
-
     <p class="social-text">Started after nearly 100 developers shared the same frustration on Reddit.</p>
-
   </section>
-
  
-
   <div class="divider"></div>
-
  
-
   <!-- ACCORDIONS -->
-
   <section class="accordions">
-
  
-
     <div class="accordion-item" data-accordion>
-
       <button class="accordion-trigger" aria-expanded="false">
-
         <span class="chevron">▸</span>
-
         <span class="trigger-label">How it works</span>
-
       </button>
-
       <div class="accordion-panel">
-
         <div class="accordion-panel-inner">
-
           <div class="steps-grid">
-
  
-
             <article class="step-card step-blue">
-
               <span class="step-index">01</span>
-
               <h3>Paste what your AI just told you</h3>
-
               <p>The full response — code, terminal commands, setup steps — from ChatGPT, Copilot, Cursor, or any assistant. Just the code works too.</p>
-
             </article>
-
  
-
             <article class="step-card step-violet">
-
               <span class="step-index">02</span>
-
               <h3>We detect the stack and check the docs</h3>
-
               <p>TrustLayer figures out what it's looking at — Docker, Immich, Nextcloud, Node.js, Python, and more — then compares every command and step against the official documentation.</p>
-
             </article>
-
  
-
             <article class="step-card step-teal">
-
               <span class="step-index">03</span>
-
               <h3>Get a verdict and a fix</h3>
-
               <p>See what's wrong, what's fine, and what quietly contradicts the docs — plus a ready-to-paste prompt that sends your AI back to get it right.</p>
-
             </article>
-
  
-
           </div>
-
         </div>
-
       </div>
-
     </div>
-
  
-
     <div class="divider"></div>
-
  
-
     <div class="accordion-item" data-accordion>
-
       <button class="accordion-trigger" aria-expanded="false">
-
         <span class="chevron">▸</span>
-
         <span class="trigger-label">Why TrustLayer exists</span>
-
       </button>
-
       <div class="accordion-panel">
-
         <div class="accordion-panel-inner">
-
           <div class="why-content">
-
             <p>AI assistants are fluent, not current. They'll hand you a Docker flag that got renamed two versions ago, or an API call that never existed in Immich, with the exact same confidence as the step that's actually correct. Nothing about the response tells you which is which — same tone, same formatting, same certainty.</p>
-
             <p>That thread started as a complaint. Almost a hundred developers replied with the same story: hours lost chasing setup steps and commands that read as correct and simply weren't. TrustLayer exists to close that gap — checking what your AI just told you against the documentation it's supposedly following, then handing you back a prompt that gets it right the second time.</p>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
-
  
-
     <div class="divider"></div>
-
  
-
     <div class="accordion-item" data-accordion>
-
       <button class="accordion-trigger" aria-expanded="false">
-
         <span class="chevron">▸</span>
-
         <span class="trigger-label">Frequently Asked Questions</span>
-
       </button>
-
       <div class="accordion-panel">
-
         <div class="accordion-panel-inner">
-
           <div class="faq-list">
-
  
-
             <div class="faq-item" data-accordion>
-
               <button class="faq-trigger" aria-expanded="false">
-
                 <span class="faq-chevron">▸</span> What exactly does TrustLayer check?
-
               </button>
-
               <div class="faq-panel">
-
                 <div class="faq-panel-inner">
-
                   <p>Every command, step, and code reference in your AI's response — checked against the official docs, changelogs, and source for whatever it's touching: Docker, Immich, Nextcloud, Node.js, Python, and more.</p>
-
                 </div>
-
               </div>
-
             </div>
-
  
-
             <div class="faq-item" data-accordion>
-
               <button class="faq-trigger" aria-expanded="false">
-
                 <span class="faq-chevron">▸</span> Is this a linter?
-
               </button>
-
               <div class="faq-panel">
-
                 <div class="faq-panel-inner">
-
                   <p>No. A linter checks style and syntax in code you wrote. TrustLayer checks whether what an AI just told you to do — commands included — actually matches what the official docs say.</p>
-
                 </div>
-
               </div>
-
             </div>
-
  
-
             <div class="faq-item" data-accordion>
-
               <button class="faq-trigger" aria-expanded="false">
-
                 <span class="faq-chevron">▸</span> What do I do with the corrected prompt?
-
               </button>
-
               <div class="faq-panel">
-
                 <div class="faq-panel-inner">
-
                   <p>Copy it, paste it back into the same AI you were using, and it answers again — this time aligned with the official docs. Copy, paste, copy, paste. No new tool to learn.</p>
-
                 </div>
-
               </div>
-
             </div>
-
  
-
             <div class="faq-item" data-accordion>
-
               <button class="faq-trigger" aria-expanded="false">
-
                 <span class="faq-chevron">▸</span> Which tools will it support at launch?
-
               </button>
-
               <div class="faq-panel">
-
                 <div class="faq-panel-inner">
-
                   <p>Docker, Immich, Nextcloud, Node.js, and Python — the stacks people most often get burned setting up with an AI assistant. More get added based on waitlist demand.</p>
-
                 </div>
-
               </div>
-
             </div>
-
  
-
             <div class="faq-item" data-accordion>
-
               <button class="faq-trigger" aria-expanded="false">
-
                 <span class="faq-chevron">▸</span> Is there a browser extension?
-
               </button>
-
               <div class="faq-panel">
-
                 <div class="faq-panel-inner">
-
                   <p>That's next on the roadmap — one click inside ChatGPT, Claude, or wherever you're already working, with the verdict and corrected prompt generated automatically. The web version comes first.</p>
-
                 </div>
-
               </div>
-
             </div>
-
  
-
             <div class="faq-item" data-accordion>
-
               <button class="faq-trigger" aria-expanded="false">
-
                 <span class="faq-chevron">▸</span> Does what I paste get stored anywhere?
-
               </button>
-
               <div class="faq-panel">
-
                 <div class="faq-panel-inner">
-
                   <p>No. What you paste is checked in-session against public documentation and discarded. Nothing is retained after your verdict and corrected prompt come back.</p>
-
                 </div>
-
               </div>
-
             </div>
-
  
-
             <div class="faq-item" data-accordion>
-
               <button class="faq-trigger" aria-expanded="false">
-
                 <span class="faq-chevron">▸</span> When can I get access?
-
               </button>
-
               <div class="faq-panel">
-
                 <div class="faq-panel-inner">
-
                   <p>We're onboarding from the waitlist in small batches so every report stays accurate. Join above and we'll email you when your spot opens.</p>
-
                 </div>
-
               </div>
-
             </div>
-
  
-
           </div>
-
         </div>
-
       </div>
-
     </div>
-
  
-
   </section>
-
  
-
 </main>
-
  
-
 <footer class="footer">
-
   <a href="https://github.com/reyhakercito-tech/TrustLayer" class="github-link" target="_blank" rel="noopener">
-
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-
       <path d="M12 .5C5.73.5.98 5.24.98 11.52c0 5.03 3.26 9.29 7.79 10.8.57.1.78-.25.78-.55 0-.27-.01-1.16-.02-2.1-3.17.69-3.84-1.34-3.84-1.34-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.14.08 1.74 1.17 1.74 1.17 1.01 1.73 2.65 1.23 3.3.94.1-.73.4-1.23.72-1.51-2.53-.29-5.2-1.27-5.2-5.63 0-1.24.44-2.26 1.17-3.06-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.14 1.17a10.9 10.9 0 0 1 5.72 0c2.18-1.48 3.14-1.17 3.14-1.17.62 1.57.23 2.73.11 3.02.73.8 1.17 1.82 1.17 3.06 0 4.37-2.68 5.34-5.22 5.62.41.36.78 1.06.78 2.15 0 1.55-.01 2.8-.01 3.18 0 .3.2.66.79.55A11.03 11.03 0 0 0 23.02 11.5C23.02 5.24 18.27.5 12 .5Z"/>
-
     </svg>
-
     <span>GitHub</span>
-
   </a>
-
   <p class="footer-fine">© 2026 TrustLayer. Verifying before you ship.</p>
-
 </footer>
-
  
-
 <script src="script.js"></script>
-
 </body>
-
 </html>
