@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TrustLayer — Stop debugging AI hallucinations</title>
-<meta name="description" content="TrustLayer verifies AI-generated code against trusted sources before it wastes your time.">
+<meta name="description" content="TrustLayer checks your AI's code, commands, and setup steps against the official docs — Docker, Immich, Nextcloud, Node.js, Python, and more — then hands you back a prompt to get it right.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -56,7 +56,7 @@
       </div>
  
       <!-- Signature element: live code verification card -->
-      <div class="verify-card" aria-hidden="true">
+      <div class="verify-card" data-state="error" aria-hidden="true">
         <div class="verify-card-head">
           <span class="verify-dot"></span>
           <span class="verify-dot"></span>
@@ -68,11 +68,14 @@
 <span class="c-muted">2</span>
 <span class="c-muted">3</span>  <span class="c-kw">const</span> session = <span class="verify-target">verifyToken.decodeAndCheck</span><span class="c-punct">(</span>token<span class="c-punct">)</span></code></pre>
           <div class="verify-tags">
-            <div class="verify-tag verify-tag-error" id="verifyTagError">
-              <span class="tag-icon">!</span> No matching export in package docs
+            <div class="verify-tag verify-tag-error">
+              <span class="tag-icon tag-icon-error">✗</span> Not found in package docs
             </div>
-            <div class="verify-tag verify-tag-success" id="verifyTagSuccess">
-              <span class="tag-icon">✓</span> Matches official source — verified
+            <div class="verify-tag verify-tag-warning">
+              <span class="tag-icon tag-icon-warning">⚠</span> Contradicts official documentation
+            </div>
+            <div class="verify-tag verify-tag-success">
+              <span class="tag-icon tag-icon-success">✓</span> Matches official source — verified
             </div>
           </div>
         </div>
@@ -102,20 +105,20 @@
  
             <article class="step-card step-blue">
               <span class="step-index">01</span>
-              <h3>Paste your code</h3>
-              <p>Drop in anything an assistant just handed you — from ChatGPT, Copilot, Cursor, or your own agent.</p>
+              <h3>Paste what your AI just told you</h3>
+              <p>The full response — code, terminal commands, setup steps — from ChatGPT, Copilot, Cursor, or any assistant. Just the code works too.</p>
             </article>
  
             <article class="step-card step-violet">
               <span class="step-index">02</span>
-              <h3>We check it against real sources</h3>
-              <p>TrustLayer cross-references official docs, changelogs, and package registries — not pattern-matching guesses.</p>
+              <h3>We detect the stack and check the docs</h3>
+              <p>TrustLayer figures out what it's looking at — Docker, Immich, Nextcloud, Node.js, Python, and more — then compares every command and step against the official documentation.</p>
             </article>
  
             <article class="step-card step-teal">
               <span class="step-index">03</span>
-              <h3>Get a clear verdict</h3>
-              <p>See exactly what's verified, what's fabricated, and what to fix — before it ships.</p>
+              <h3>Get a verdict and a fix</h3>
+              <p>See what's wrong, what's fine, and what quietly contradicts the docs — plus a ready-to-paste prompt that sends your AI back to get it right.</p>
             </article>
  
           </div>
@@ -133,8 +136,8 @@
       <div class="accordion-panel">
         <div class="accordion-panel-inner">
           <div class="why-content">
-            <p>AI models are fluent, not honest. They'll invent a method that doesn't exist with the same confidence as one that does — same syntax, same indentation, same air of certainty. The bug doesn't show up in review. It shows up in production, or in the hour you spend figuring out why an import that "should" work doesn't.</p>
-            <p>That thread started as a complaint. Almost a hundred developers replied with the exact same story: hours lost chasing code that read as correct and simply wasn't. TrustLayer exists to close that gap — checking generated code against the sources it's supposedly based on, before you build on top of it.</p>
+            <p>AI assistants are fluent, not current. They'll hand you a Docker flag that got renamed two versions ago, or an API call that never existed in Immich, with the exact same confidence as the step that's actually correct. Nothing about the response tells you which is which — same tone, same formatting, same certainty.</p>
+            <p>That thread started as a complaint. Almost a hundred developers replied with the same story: hours lost chasing setup steps and commands that read as correct and simply weren't. TrustLayer exists to close that gap — checking what your AI just told you against the documentation it's supposedly following, then handing you back a prompt that gets it right the second time.</p>
           </div>
         </div>
       </div>
@@ -157,7 +160,7 @@
               </button>
               <div class="faq-panel">
                 <div class="faq-panel-inner">
-                  <p>Every function call, import, and API reference against the actual documentation, changelog, or source of the library it claims to use — flagging anything that doesn't exist or has been deprecated.</p>
+                  <p>Every command, step, and code reference in your AI's response — checked against the official docs, changelogs, and source for whatever it's touching: Docker, Immich, Nextcloud, Node.js, Python, and more.</p>
                 </div>
               </div>
             </div>
@@ -168,29 +171,51 @@
               </button>
               <div class="faq-panel">
                 <div class="faq-panel-inner">
-                  <p>No. A linter checks style and syntax. TrustLayer checks truth — whether the code actually does what its imports and calls claim it does, against a real source.</p>
+                  <p>No. A linter checks style and syntax in code you wrote. TrustLayer checks whether what an AI just told you to do — commands included — actually matches what the official docs say.</p>
                 </div>
               </div>
             </div>
  
             <div class="faq-item" data-accordion>
               <button class="faq-trigger" aria-expanded="false">
-                <span class="faq-chevron">▸</span> Which languages and tools will it support?
+                <span class="faq-chevron">▸</span> What do I do with the corrected prompt?
               </button>
               <div class="faq-panel">
                 <div class="faq-panel-inner">
-                  <p>We're starting with JavaScript/TypeScript and Python, sourced from the assistants developers use most: Copilot, Cursor, and ChatGPT. More languages land based on waitlist demand.</p>
+                  <p>Copy it, paste it back into the same AI you were using, and it answers again — this time aligned with the official docs. Copy, paste, copy, paste. No new tool to learn.</p>
                 </div>
               </div>
             </div>
  
             <div class="faq-item" data-accordion>
               <button class="faq-trigger" aria-expanded="false">
-                <span class="faq-chevron">▸</span> Does my code get stored anywhere?
+                <span class="faq-chevron">▸</span> Which tools will it support at launch?
               </button>
               <div class="faq-panel">
                 <div class="faq-panel-inner">
-                  <p>No. Code is checked in-session against public sources and discarded. Nothing is retained after the verdict is returned.</p>
+                  <p>Docker, Immich, Nextcloud, Node.js, and Python — the stacks people most often get burned setting up with an AI assistant. More get added based on waitlist demand.</p>
+                </div>
+              </div>
+            </div>
+ 
+            <div class="faq-item" data-accordion>
+              <button class="faq-trigger" aria-expanded="false">
+                <span class="faq-chevron">▸</span> Is there a browser extension?
+              </button>
+              <div class="faq-panel">
+                <div class="faq-panel-inner">
+                  <p>That's next on the roadmap — one click inside ChatGPT, Claude, or wherever you're already working, with the verdict and corrected prompt generated automatically. The web version comes first.</p>
+                </div>
+              </div>
+            </div>
+ 
+            <div class="faq-item" data-accordion>
+              <button class="faq-trigger" aria-expanded="false">
+                <span class="faq-chevron">▸</span> Does what I paste get stored anywhere?
+              </button>
+              <div class="faq-panel">
+                <div class="faq-panel-inner">
+                  <p>No. What you paste is checked in-session against public documentation and discarded. Nothing is retained after your verdict and corrected prompt come back.</p>
                 </div>
               </div>
             </div>
@@ -228,3 +253,4 @@
 <script src="script.js"></script>
 </body>
 </html>
+ 
