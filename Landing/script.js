@@ -131,61 +131,190 @@
     });
   });
 
-  /* ---------- Signature verify-card loop ---------- */
-  const verifyCard = document.querySelector('.verify-card');
+  /* ---------- Signature demo: one window, four states ----------
+     This sequence IS the product explanation. The code block is
+     the SAME element from state 1 through state 4 — it never gets
+     torn down and rebuilt, it just mutates in place (dims, checks,
+     loses a line). The only real "swap" in the whole sequence is
+     the detour out to the prompt view and back, and even that is
+     staged as a handoff rather than a flat crossfade. */
+  const demoWindow = document.getElementById('demoWindow');
 
-  if (verifyCard) {
-  const states = ['error', 'warning', 'verified'];
+  if (demoWindow) {
+    const demoLabel = document.getElementById('demoLabel');
+    const demoReplay = document.getElementById('demoReplay');
+    const demoFlow = document.getElementById('demoFlow');
+    const demoFlowBar = document.getElementById('demoFlowBar');
+    const flowSteps = Array.from(demoFlow.querySelectorAll('.demo-flow-step'));
+    const viewCode = document.getElementById('demoViewCode');
+    const viewPrompt = document.getElementById('demoViewPrompt');
+    const contextLine = document.getElementById('demoContextLine');
+    const codeEl = document.getElementById('demoCode');
+    const codeLines = Array.from(codeEl.querySelectorAll('.d-line'));
+    const flagFold = document.getElementById('demoFlagFold');
+    const verdict = document.getElementById('demoVerdict');
+    const verifiedBadge = document.getElementById('demoVerifiedBadge');
+    const promptEl = document.getElementById('demoPrompt');
 
-  if (prefersReducedMotion) {
-    verifyCard.dataset.state = 'verified';
-  } else {
-    let i = 0;
+    const QUESTION_TEXT = 'Generate a Docker Compose configuration for Immich.';
+    const META_TEXT = '→ corrected prompt sent back to the assistant';
 
-    const cycle = () => {
-      i = (i + 1) % states.length;
-      verifyCard.dataset.state = states[i];
+    const LABELS = {
+      1: 'AI assistant',
+      2: 'TrustLayer — checking',
+      3: 'TrustLayer — corrected prompt',
+      4: 'AI assistant — verified',
     };
 
-    window.setTimeout(() => {
-      cycle();
-      window.setInterval(cycle, 2600);
-    }, 1600);
+    const PROMPT_TEXT =
+      'TrustLayer flagged IMMICH_CACHE_MODE — it isn\u2019t a documented Immich environment variable. Regenerate the Docker Compose file without it, using only variables listed in the official docs.';
+
+    let timers = [];
+    let idleTimer = null;
+    const clearTimers = () => { timers.forEach((t) => window.clearTimeout(t)); timers = []; };
+    const after = (ms, fn) => { timers.push(window.setTimeout(fn, ms)); };
+
+    // Moves the underline beneath the active flow word — the only
+    // "arrow" this diagram needs.
+    function setFlowStep(step) {
+      flowSteps.forEach((el) => el.classList.toggle('is-active', Number(el.dataset.step) === step));
+      const target = flowSteps[step - 1];
+      const containerRect = demoFlow.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      demoFlowBar.style.width = `${targetRect.width}px`;
+      demoFlowBar.style.transform = `translateX(${targetRect.left - containerRect.left}px)`;
+    }
+
+    // Updates the chrome (dot color, label, flow position) without
+    // touching which view is visible — used whenever a state change
+    // doesn't require swapping views at all (state 1 → state 2).
+    function setPhase(n) {
+      demoWindow.dataset.phase = String(n);
+      demoLabel.textContent = LABELS[n];
+      setFlowStep(n);
+    }
+
+    // Types the corrected-prompt sentence in natural word bursts —
+    // deliberately not a per-character typewriter, closer to how a
+    // generated answer actually streams in.
+    function typePrompt(onDone) {
+      const words = PROMPT_TEXT.split(' ');
+      promptEl.textContent = '';
+      const cursor = document.createElement('span');
+      cursor.className = 'demo-prompt-cursor';
+      promptEl.appendChild(cursor);
+
+      let i = 0;
+      const step = () => {
+        if (i >= words.length) { cursor.remove(); onDone && onDone(); return; }
+        const chunk = words.slice(i, i + (Math.random() > 0.6 ? 2 : 1)).join(' ') + ' ';
+        cursor.insertAdjacentText('beforebegin', chunk);
+        i += chunk.trim().split(' ').length;
+        after(45 + Math.random() * 55, step);
+      };
+      step();
+    }
+
+    // Checks each line of the code in sequence — calm, one at a
+    // time, ending on the single line that doesn't match the docs.
+    function scanLines(onDone) {
+      codeEl.classList.add('is-checking');
+      codeLines.forEach((l) => l.classList.remove('d-checked'));
+
+      let i = 0;
+      const step = () => {
+        if (i >= codeLines.length) { after(300, () => { verdict.classList.add('is-shown'); onDone && onDone(); }); return; }
+        codeLines[i].classList.add('d-checked');
+        i += 1;
+        after(130, step);
+      };
+      after(300, step);
+    }
+
+    // The fix lands as an in-place mutation of the same block:
+    // the flagged line retracts, the error tag gives way to the
+    // verified one. Nothing here is a new screen.
+    function applyFix() {
+      flagFold.classList.add('is-collapsed');
+      verdict.classList.remove('is-shown');
+      after(350, () => verifiedBadge.classList.add('is-shown'));
+    }
+
+    // Swaps views as a two-step handoff (outgoing settles away,
+    // then the incoming one arrives) instead of a flat crossfade —
+    // used only for the one real detour in the sequence.
+    function handoff(outgoing, incoming, gap, onDone) {
+      outgoing.classList.remove('is-active');
+      after(gap, () => { incoming.classList.add('is-active'); onDone && onDone(); });
+    }
+
+    function resetAll() {
+      viewPrompt.classList.remove('is-active');
+      viewCode.classList.add('is-active');
+      codeEl.classList.remove('is-checking');
+      codeLines.forEach((l) => l.classList.remove('d-checked'));
+      flagFold.classList.remove('is-collapsed');
+      verdict.classList.remove('is-shown');
+      verifiedBadge.classList.remove('is-shown');
+      contextLine.textContent = QUESTION_TEXT;
+      contextLine.classList.remove('is-meta');
+      promptEl.textContent = '';
+    }
+
+    function run() {
+      clearTimers();
+      window.clearTimeout(idleTimer);
+      resetAll();
+
+      setPhase(1);                                  // state 1 — the assistant answers, and it gets to sit there
+      after(4100, () => {
+        setPhase(2);                                // state 2 — TrustLayer checks it, same block, same window
+        scanLines();
+      });
+      after(7700, () => {
+        setPhase(3);
+        handoff(viewCode, viewPrompt, 200, () => {   // state 3 — the one real detour
+          after(150, () => typePrompt());
+        });
+      });
+      after(11300, () => {
+        setPhase(4);
+        contextLine.textContent = META_TEXT;
+        contextLine.classList.add('is-meta');
+        handoff(viewPrompt, viewCode, 200, () => {   // state 4 — back to the same window, now correct
+          applyFix();
+        });
+      });
+      after(13500, () => {
+        demoWindow.classList.add('is-done');
+        scheduleIdleReplay();
+      });
+    }
+
+    function scheduleIdleReplay() {
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(run, 30000);
+    }
+
+    if (prefersReducedMotion) {
+      // Skip the sequence entirely — land on the calm, finished
+      // state so it can just be read.
+      resetAll();
+      codeEl.classList.add('is-checking');
+      codeLines.forEach((l) => l.classList.add('d-checked'));
+      flagFold.classList.add('is-collapsed');
+      verifiedBadge.classList.add('is-shown');
+      contextLine.textContent = META_TEXT;
+      contextLine.classList.add('is-meta');
+      setPhase(4);
+      demoWindow.classList.add('is-done');
+    } else {
+      run();
+      demoWindow.addEventListener('click', () => { if (demoWindow.classList.contains('is-done')) run(); });
+      demoReplay.addEventListener('click', (e) => { e.stopPropagation(); run(); });
+      window.addEventListener('resize', () => setFlowStep(Number(demoWindow.dataset.phase)));
+    }
   }
-
-  // ---------- Verify card: instant tilt tracking + working cursor sheen ----------
-  if (!prefersReducedMotion) {
-
-    verifyCard.addEventListener('mouseenter', () => {
-      // Kill only the transform transition while tracking — box-shadow
-      // keeps easing in on hover, just the tilt itself becomes instant.
-      verifyCard.style.transition = 'box-shadow 0.4s var(--ease)';
-    });
-
-    verifyCard.addEventListener('mousemove', (e) => {
-      const rect = verifyCard.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      // Perspective already comes from .verify-card-wrapper in CSS, so the
-      // transform here only needs the rotation itself. Kept small (5deg
-      // max) so the tilt reads as a subtle response, not a toy.
-      const rotateY = ((x / rect.width) - 0.5) * 5;
-      const rotateX = (0.5 - y / rect.height) * 5;
-
-      verifyCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
-      verifyCard.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
-      verifyCard.style.setProperty('--my', `${(y / rect.height) * 100}%`);
-    });
-
-    verifyCard.addEventListener('mouseleave', () => {
-      // Restore the eased CSS transition only for the return to rest.
-      verifyCard.style.transition = '';
-      verifyCard.style.transform = 'rotateX(0deg) rotateY(0deg) translateY(0)';
-    });
-
-  }
-}
 
   /* ---------- Scroll reveal for sections ---------- */
   const revealTargets = document.querySelectorAll('.social-proof, .accordion-item, .footer');
