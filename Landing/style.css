@@ -17,6 +17,7 @@
   --violet: #7c5cfa;
   --teal: #14b8a2;
   --error: #ff453a;
+  --warning: #ff9f0a;
 
   --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -346,9 +347,8 @@ a { color: inherit; }
   transition: border-color 0.6s var(--ease-apple), color 0.6s var(--ease-apple);
 }
 
-.verify-card.verified .verify-target {
-  border-color: var(--teal);
-}
+.verify-card[data-state="warning"] .verify-target { border-color: var(--warning); }
+.verify-card[data-state="verified"] .verify-target { border-color: var(--teal); }
 
 .verify-tags {
   position: relative;
@@ -368,6 +368,8 @@ a { color: inherit; }
   border-radius: var(--radius-sm);
   font-size: 12.5px;
   font-family: var(--font-mono);
+  opacity: 0;
+  transform: translateY(4px);
   transition: opacity 0.5s var(--ease-apple), transform 0.5s var(--ease-apple);
 }
 
@@ -382,28 +384,24 @@ a { color: inherit; }
   font-family: var(--font-body);
   font-weight: 700;
   flex-shrink: 0;
+  color: #fff;
 }
 
-.verify-tag-error {
-  background: rgba(255, 69, 58, 0.12);
-  color: #ff8a80;
+.verify-tag-error { background: rgba(255, 69, 58, 0.12); color: #ff8a80; }
+.tag-icon-error { background: var(--error); }
+
+.verify-tag-warning { background: rgba(255, 159, 10, 0.14); color: #ffc178; }
+.tag-icon-warning { background: var(--warning); }
+
+.verify-tag-success { background: rgba(20, 184, 162, 0.14); color: #6be0d0; }
+.tag-icon-success { background: var(--teal); }
+
+.verify-card[data-state="error"] .verify-tag-error,
+.verify-card[data-state="warning"] .verify-tag-warning,
+.verify-card[data-state="verified"] .verify-tag-success {
   opacity: 1;
   transform: translateY(0);
 }
-
-.verify-tag-error .tag-icon { background: var(--error); color: #fff; }
-
-.verify-tag-success {
-  background: rgba(20, 184, 162, 0.14);
-  color: #6be0d0;
-  opacity: 0;
-  transform: translateY(4px);
-}
-
-.verify-tag-success .tag-icon { background: var(--teal); color: #fff; }
-
-.verify-card.verified .verify-tag-error { opacity: 0; transform: translateY(-4px); }
-.verify-card.verified .verify-tag-success { opacity: 1; transform: translateY(0); }
 
 @media (max-width: 480px) {
   .verify-tags { min-height: 56px; }
