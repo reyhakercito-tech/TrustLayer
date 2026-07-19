@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TrustLayer — Make AI reliable for real systems.</title>
+  <title>TrustLayer — Make AI reliable for real systems</title>
   <meta name="description" content="TrustLayer checks your AI's code, commands, and setup steps against the official docs — Docker, Immich, Nextcloud, Node.js, Python, and more — then hands you back a prompt to get it right.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
     <div class="hero-inner">
       <p class="wordmark">TrustLayer</p>
       <h1 class="headline">Make AI reliable<br>for real systems.</h1>
-      <p class="subhead">AI-generated instructions can look perfectly valid — until they meet reality. TrustLayer verifies AI responses against official documentation before you run them.</p>
+      <p class="subhead">AI-generated instructions can look perfectly valid — until they meet reality. TrustLayer verifies them against official documentation before you run them.</p>
  
       <div class="cta-wrap" id="hero-cta">
         <button class="cta-pill" id="ctaButton">
@@ -52,40 +52,82 @@
       </div>
     </div>
  
-    <!-- Signature element: live code verification card -->
-    <div class="verify-card-wrapper">
-      <div class="verify-card" data-state="error" aria-hidden="true">
-        <div class="verify-card-head">
+    <!-- Signature element: one living interface, four states.
+         This IS the product explanation — if every paragraph below
+         it disappeared, this alone should say what TrustLayer does. -->
+    <div class="demo-wrapper">
+
+      <div class="demo-window" id="demoWindow" data-phase="1" role="img"
+           aria-label="Demo: an AI assistant answers a Docker question, TrustLayer quietly checks it against the official docs, flags one invalid line, and hands back a prompt that fixes it.">
+
+        <div class="demo-window-head">
+          <span class="demo-dot"></span>
           <span class="verify-dot"></span>
           <span class="verify-dot"></span>
-          <span class="verify-dot"></span>
-          <span class="verify-filename">auth.ts</span>
+          <span class="demo-window-label" id="demoLabel">AI assistant</span>
+          <button class="demo-replay" id="demoReplay" type="button" aria-label="Watch again" tabindex="-1">↻</button>
         </div>
- 
-        <div class="verify-card-body">
-          <pre class="verify-code"><code><span class="c-muted">1</span>  <span class="c-kw">import</span> { verifyToken } <span class="c-kw">from</span> <span class="c-str">'@supabase/ssr'</span>
-<span class="c-muted">2</span>  <span class="c-kw">const</span> session = <span class="verify-target">verifyToken.decodeAndCheck</span><span class="c-punct">(</span>token<span class="c-punct">)</span></code></pre>
- 
-          <div class="verify-tags">
-            <div class="verify-tag verify-tag-error">
-              <span class="tag-icon tag-icon-error">✗</span> Not found in package docs
+
+        <div class="demo-window-body">
+
+          <!-- CODE VIEW — covers states 1, 2 and 4. Same DOM the
+               whole way through: nothing here gets torn down and
+               rebuilt, it only mutates. -->
+          <div class="demo-view demo-view-code is-active" id="demoViewCode">
+            <p class="demo-line demo-line-user" id="demoContextLine">Generate a Docker Compose configuration for Immich.</p>
+
+            <div class="demo-code" id="demoCode">
+              <div class="d-line" style="--stagger:0"><span class="c-kw">services</span><span class="c-punct">:</span></div>
+              <div class="d-line" style="--stagger:1">  <span class="c-kw">immich-server</span><span class="c-punct">:</span></div>
+              <div class="d-line" style="--stagger:2">    <span class="c-kw">image</span><span class="c-punct">:</span> <span class="c-str">ghcr.io/immich-app/immich-server:release</span></div>
+              <div class="d-line" style="--stagger:3">    <span class="c-kw">environment</span><span class="c-punct">:</span></div>
+              <div class="d-line" style="--stagger:4">      - <span class="c-str">DB_HOSTNAME=database</span></div>
+              <div class="d-line" style="--stagger:5">      - <span class="c-str">REDIS_HOSTNAME=redis</span></div>
+              <div class="d-line-fold" id="demoFlagFold">
+                <div class="d-line-fold-inner">
+                  <div class="d-line d-line-flaggable" style="--stagger:6">      - <span class="c-str">IMMICH_CACHE_MODE=aggressive</span></div>
+                </div>
+              </div>
+              <div class="d-line" style="--stagger:7">    <span class="c-kw">ports</span><span class="c-punct">:</span></div>
+              <div class="d-line" style="--stagger:8">      - <span class="c-str">"2283:2283"</span></div>
             </div>
-            <div class="verify-tag verify-tag-warning">
-              <span class="tag-icon tag-icon-warning">⚠</span> Contradicts official documentation
-            </div>
-            <div class="verify-tag verify-tag-success">
-              <span class="tag-icon tag-icon-success">✓</span> Matches official source — verified
+
+            <div class="demo-verdict-slot">
+              <p class="demo-verdict" id="demoVerdict">
+                <span class="tag-icon tag-icon-error">✗</span> IMMICH_CACHE_MODE — not a documented Immich variable
+              </p>
+              <p class="demo-verdict demo-verdict-success demo-verdict-final" id="demoVerifiedBadge">
+                <span class="tag-icon tag-icon-success">✓</span> Verified against official documentation
+              </p>
             </div>
           </div>
+
+          <!-- PROMPT VIEW — the one genuine detour in the sequence.
+               Everything else stays on the code view above. -->
+          <div class="demo-view demo-view-prompt" id="demoViewPrompt">
+            <span class="demo-meta">Corrected prompt</span>
+            <p class="demo-prompt" id="demoPrompt"></p>
+          </div>
+
         </div>
       </div>
+
+      <!-- The mental model, not a diagram. Only one word is ever active. -->
+      <div class="demo-flow" id="demoFlow" aria-hidden="true">
+        <span class="demo-flow-step" data-step="1">AI Assistant</span>
+        <span class="demo-flow-step" data-step="2">TrustLayer</span>
+        <span class="demo-flow-step" data-step="3">Corrected Prompt</span>
+        <span class="demo-flow-step" data-step="4">Verified Answer</span>
+        <span class="demo-flow-bar" id="demoFlowBar"></span>
+      </div>
+
     </div>
   </header>
  
   <!-- SOCIAL PROOF -->
   <section class="social-proof">
     <p class="social-eyebrow">Built in public.</p>
-    <p class="social-text">Started after nearly 100 developers shared the same frustration on Reddit.</p>
+    <p class="social-text">Started after 100+ developers shared the same frustration: AI-generated instructions that looked right — and weren't.</p>
   </section>
  
   <div class="divider"></div>
@@ -110,8 +152,8 @@
  
             <article class="step-card step-violet">
               <span class="step-index">02</span>
-              <h3>We detect the stack and check the docs</h3>
-              <p>TrustLayer figures out what it's looking at — Docker, Immich, Nextcloud, Node.js, Python, and more — then compares every command and step against the official documentation.</p>
+              <h3>We identify the stack and verify against official sources</h3>
+              <p>TrustLayer identifies what it's looking at — Docker, Immich, Nextcloud, Node.js, Python, and more — then compares every command and step against the official documentation.</p>
             </article>
  
             <article class="step-card step-teal">
@@ -135,7 +177,7 @@
       <div class="accordion-panel">
         <div class="accordion-panel-inner">
           <div class="why-content">
-            <p>AI assistants are fluent, not current. They'll hand you a Docker flag that got renamed two versions ago, or an API call that never existed in Immich, with the exact same confidence as the step that's actually correct. Nothing about the response tells you which is which — same tone, same formatting, same certainty.</p>
+            <p>AI assistants are fluent, not current. They'll hand you a Docker flag that was removed two versions ago, or an API call that never existed, with the exact same confidence as the step that's actually correct. Nothing about the response tells you which is which — same tone, same formatting, same certainty.</p>
             <p>That thread started as a complaint. Almost a hundred developers replied with the same story: hours lost chasing setup steps and commands that read as correct and simply weren't. TrustLayer exists to close that gap — checking what your AI just told you against the documentation it's supposedly following, then handing you back a prompt that gets it right the second time.</p>
           </div>
         </div>
@@ -159,7 +201,7 @@
               </button>
               <div class="faq-panel">
                 <div class="faq-panel-inner">
-                  <p>Every command, step, and code reference in your AI's response — checked against the official docs, changelogs, and source for whatever it's touching: Docker, Immich, Nextcloud, Node.js, Python, and more.</p>
+                  <p>Commands, setup steps, configurations, and code references in your AI's response — checked against the official docs, changelogs, and source for whatever it's touching: Docker, Immich, Nextcloud, Node.js, Python, and more.</p>
                 </div>
               </div>
             </div>
@@ -203,7 +245,7 @@
               </button>
               <div class="faq-panel">
                 <div class="faq-panel-inner">
-                  <p>That's next on the roadmap — one click inside ChatGPT, Claude, or wherever you're already working, with the verdict and corrected prompt generated automatically. The web version comes first.</p>
+                  <p>A browser extension is planned for later — one click inside ChatGPT, Claude, or wherever you're already working, with the verdict and corrected prompt generated automatically. The web version comes first.</p>
                 </div>
               </div>
             </div>
@@ -214,7 +256,7 @@
               </button>
               <div class="faq-panel">
                 <div class="faq-panel-inner">
-                  <p>No. What you paste is checked in-session against public documentation and discarded. Nothing is retained after your verdict and corrected prompt come back.</p>
+                  <p>Your submissions are used only for verification and are not used to train models.</p>
                 </div>
               </div>
             </div>
