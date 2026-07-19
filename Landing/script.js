@@ -95,33 +95,45 @@
     }
 
     const submitBtn = waitlistForm.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.textContent : '';
+    
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending...';
+      submitBtn.textContent = 'Verifying...';
     }
 
     const payload = new URLSearchParams();
     payload.append('email', waitlistEmail.value.trim());
 
+    // Quitamos 'mode: no-cors' para poder leer si el correo ya estaba repetido en el Sheet
     fetch(SHEET_ENDPOINT, {
       method: 'POST',
-      mode: 'no-cors',
       body: payload
     })
-    .then(() => {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, 'true');
-      } catch (err) {
-        // ignore — still show the joined state for this session
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'duplicate') {
+        alert("Sorry! You're already on the waitlist.");
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText || 'Join Waitlist';
+        }
+      } else {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, 'true');
+        } catch (err) {
+          // ignore — still show the joined state for this session
+        }
+        setJoinedState();
       }
-      setJoinedState();
     })
     .catch((err) => {
       console.error(err);
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Join Waitlist';
-      }
+      // Fallback por si el navegador bloquea la lectura del JSON por CORS pero sí guardó el dato
+      try {
+        window.localStorage.setItem(STORAGE_KEY, 'true');
+      } catch (e) {}
+      setJoinedState();
     });
   });
 
