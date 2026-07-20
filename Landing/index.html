@@ -58,7 +58,7 @@
     <div class="demo-wrapper">
 
       <div class="demo-window" id="demoWindow" data-phase="1" role="img"
-           aria-label="Demo: an AI assistant answers a Docker question, TrustLayer quietly checks it against the official docs, flags one invalid line, and hands back a prompt that fixes it.">
+           aria-label="Demo: an AI assistant answers a Docker question, TrustLayer quietly checks it against the official docs, flags one line that contradicts the docs and one line that doesn't exist in them, hands back a corrected prompt, then re-scans the fixed answer and confirms it matches the documentation.">
 
         <div class="demo-window-head">
           <span class="demo-dot"></span>
@@ -77,28 +77,45 @@
             <p class="demo-line demo-line-user" id="demoContextLine">Generate a Docker Compose configuration for Immich.</p>
 
             <div class="demo-code" id="demoCode">
+              <div class="demo-scan-bar"></div>
               <div class="d-line" style="--stagger:0"><span class="c-kw">services</span><span class="c-punct">:</span></div>
-              <div class="d-line" style="--stagger:1">  <span class="c-kw">immich-server</span><span class="c-punct">:</span></div>
-              <div class="d-line" style="--stagger:2">    <span class="c-kw">image</span><span class="c-punct">:</span> <span class="c-str">ghcr.io/immich-app/immich-server:release</span></div>
-              <div class="d-line" style="--stagger:3">    <span class="c-kw">environment</span><span class="c-punct">:</span></div>
-              <div class="d-line" style="--stagger:4">      - <span class="c-str">DB_HOSTNAME=database</span></div>
-              <div class="d-line" style="--stagger:5">      - <span class="c-str">REDIS_HOSTNAME=redis</span></div>
+              <div class="d-line" style="--stagger:2.2">  <span class="c-kw">immich-server</span><span class="c-punct">:</span></div>
+              <div class="d-line d-line-warning" style="--stagger:3.6">    <span class="c-kw">image</span><span class="c-punct">:</span> <span class="c-str" id="demoImageTag">ghcr.io/immich-app/immich-server:release</span></div>
+              <div class="d-line" style="--stagger:5.2">    <span class="c-kw">environment</span><span class="c-punct">:</span></div>
+              <div class="d-line" style="--stagger:7">      - <span class="c-str">DB_HOSTNAME=database</span></div>
+              <div class="d-line d-line-success" style="--stagger:8">      - <span class="c-str">REDIS_HOSTNAME=redis</span></div>
               <div class="d-line-fold" id="demoFlagFold">
                 <div class="d-line-fold-inner">
-                  <div class="d-line d-line-flaggable" style="--stagger:6">      - <span class="c-str">IMMICH_CACHE_MODE=aggressive</span></div>
+                  <div class="d-line d-line-flaggable" style="--stagger:9.2">      - <span class="c-str">IMMICH_CACHE_MODE=aggressive</span></div>
                 </div>
               </div>
-              <div class="d-line" style="--stagger:7">    <span class="c-kw">ports</span><span class="c-punct">:</span></div>
-              <div class="d-line" style="--stagger:8">      - <span class="c-str">"2283:2283"</span></div>
+              <div class="d-line" style="--stagger:11">    <span class="c-kw">ports</span><span class="c-punct">:</span></div>
+              <div class="d-line" style="--stagger:12">      - <span class="c-str">"2283:2283"</span></div>
+              <span class="demo-code-cursor" id="demoCodeCursor" aria-hidden="true"></span>
             </div>
 
             <div class="demo-verdict-slot">
-              <p class="demo-verdict" id="demoVerdict">
-                <span class="tag-icon tag-icon-error">✗</span> IMMICH_CACHE_MODE — not a documented Immich variable
-              </p>
-              <p class="demo-verdict demo-verdict-success demo-verdict-final" id="demoVerifiedBadge">
-                <span class="tag-icon tag-icon-success">✓</span> Verified against official documentation
-              </p>
+              <div class="demo-verdict-row" id="demoVerdictRow">
+                <div class="demo-verdict-row-inner">
+                  <p class="demo-verdict demo-verdict-error" id="demoVerdict">
+                    <span class="tag-icon tag-icon-error">✗</span> IMMICH_CACHE_MODE — not a documented Immich variable
+                  </p>
+                </div>
+              </div>
+              <div class="demo-verdict-row" id="demoVerdictWarningRow">
+                <div class="demo-verdict-row-inner">
+                  <p class="demo-verdict demo-verdict-warning" id="demoVerdictWarning">
+                    <span class="tag-icon tag-icon-warning" aria-hidden="true">⚠️</span> ':release' tag — contradicts the docs' pinned-version guidance
+                  </p>
+                </div>
+              </div>
+              <div class="demo-verdict-row demo-verdict-row-final" id="demoVerdictSuccessRow">
+                <div class="demo-verdict-row-inner">
+                  <p class="demo-verdict demo-verdict-success demo-verdict-final" id="demoVerifiedBadge">
+                    <span class="tag-icon tag-icon-success">✓</span> Verified against official documentation
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
