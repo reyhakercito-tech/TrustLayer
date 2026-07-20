@@ -407,7 +407,7 @@ a { color: inherit; }
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 13px 18px;
+  padding: 15px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
  
@@ -439,6 +439,14 @@ a { color: inherit; }
 .demo-window[data-phase="4"] .demo-dot {
   background: var(--teal);
   box-shadow: 0 0 0 3px rgba(20, 184, 162, 0.18);
+}
+
+/* The corrected answer gets the same scrutiny as the first draft —
+   the dot goes back to violet for the re-check pass, then teal once
+   that pass actually confirms it's clean. */
+.demo-window.is-rechecking .demo-dot {
+  background: var(--violet);
+  box-shadow: 0 0 0 3px rgba(124, 92, 250, 0.18);
 }
  
 .demo-window-label {
@@ -475,14 +483,13 @@ a { color: inherit; }
  
 .demo-window-body {
   position: relative;
-  padding: 20px 22px 22px;
-  text-align: left;
   overflow: hidden;
   /* Fixed so the window itself never resizes as the content
      changes — the frame stays put, only what's inside it moves.
      Sized to the tallest state (question + 9 lines + verdict tag)
-     with headroom to spare, so nothing ever clips or scrolls. */
-  height: 340px;
+     plus the wider padding below, with headroom to spare so
+     nothing ever clips or scrolls. */
+  height: 392px;
 }
  
 /* Two views only: the code block (states 1, 2 and 4 all live here,
@@ -493,9 +500,11 @@ a { color: inherit; }
 .demo-view {
   position: absolute;
   inset: 0;
+  padding: 36px 40px 38px;
+  text-align: left;
   overflow: hidden;
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(4px);
   pointer-events: none;
   transition: opacity 0.55s var(--ease), transform 0.55s var(--ease);
 }
@@ -510,8 +519,15 @@ a { color: inherit; }
   font-size: 13px;
   letter-spacing: -0.005em;
   color: rgba(255, 255, 255, 0.55);
-  margin-bottom: 14px;
-  transition: color 0.4s var(--ease);
+  margin-bottom: 20px;
+  transition: color 0.5s var(--ease);
+}
+
+/* While TrustLayer is actively checking, the question recedes —
+   it already did its job, the scan is the only thing worth
+   looking at right now. */
+.demo-window[data-phase="2"] .demo-line-user:not(.is-meta) {
+  color: rgba(255, 255, 255, 0.3);
 }
  
 .demo-line-user.is-meta {
@@ -533,6 +549,7 @@ a { color: inherit; }
 }
  
 .demo-code {
+  position: relative;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 12.5px;
@@ -540,20 +557,74 @@ a { color: inherit; }
   color: rgba(255, 255, 255, 0.82);
   overflow: hidden;
 }
+
+/* The scan bar — a thin line of light, not a laser. It sweeps once
+   per check and nothing else happens while it travels; only the
+   specific lines it passes over ever change. It fades in when a
+   check starts and fades back out the moment that check is done
+   (JS toggles .is-checking off again) — it never just sits there. */
+.demo-scan-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(10, 132, 255, 0.75) 12%,
+    rgba(170, 205, 255, 1) 50%,
+    rgba(10, 132, 255, 0.75) 88%,
+    transparent);
+  box-shadow:
+    0 0 8px rgba(10, 132, 255, 0.65),
+    0 0 22px rgba(10, 132, 255, 0.35),
+    0 0 44px rgba(10, 132, 255, 0.16);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s var(--ease);
+  z-index: 2;
+}
+
+/* A soft trailing glow above the line — reads as a beam sweeping
+   down the block rather than a bare pixel travelling on its own. */
+.demo-scan-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 52px;
+  background: linear-gradient(to bottom, transparent, rgba(10, 132, 255, 0.09));
+}
+
+.demo-code.is-checking .demo-scan-bar {
+  opacity: 1;
+  animation: scanSweep 2.4s linear forwards;
+}
+
+@keyframes scanSweep {
+  from { top: 0%; }
+  to { top: 100%; }
+}
  
 .d-line {
   line-height: 1.78;
   white-space: pre;
   opacity: 0;
-  transform: translateY(5px);
+  transform: translateY(3px);
   transition: color 0.5s var(--ease);
 }
  
 /* Each line reveals on its own the first time the window plays —
-   a generated-code feel without typing a single character. */
+   a generated-code feel without typing a single character. The
+   0.75s lead-in reads as the assistant composing an answer before
+   committing to anything; --stagger values per line are hand-tuned
+   (not a flat index multiple) so the rhythm has small hesitations
+   instead of a metronome. */
 .demo-view-code.is-active .demo-code .d-line {
-  animation: lineIn 0.45s var(--ease) forwards;
-  animation-delay: calc(0.05s + var(--stagger, 0) * 0.1s);
+  animation: lineIn 0.5s var(--ease) forwards;
+  animation-delay: calc(0.75s + var(--stagger, 0) * 0.16s);
 }
  
 @keyframes lineIn {
@@ -565,14 +636,49 @@ a { color: inherit; }
 .c-kw { color: #8fb8ff; }
 .c-str { color: #9fd9ae; }
 .c-punct { color: rgba(255, 255, 255, 0.45); }
+
+/* Sits right after the last generated line and blinks briefly once
+   the answer has finished writing — a small, honest nod to "this is
+   still a live response," not a typewriter effect on every line. */
+.demo-code-cursor {
+  display: inline-block;
+  width: 6px;
+  height: 12px;
+  margin-left: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  vertical-align: -2px;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+}
+
+.demo-code-cursor.is-visible {
+  opacity: 1;
+  animation: caretBlink 0.9s steps(1) infinite;
+}
  
-/* Verification pass — every line dims to "not checked yet," then
-   settles back to full brightness as TrustLayer reaches it. The
-   flagged line settles into red instead. Same lines, same DOM,
-   just a color the state moves through. */
-.demo-code.is-checking .d-line { color: rgba(255, 255, 255, 0.36); }
-.demo-code.is-checking .d-line.d-checked { color: rgba(255, 255, 255, 0.82); }
-.demo-code.is-checking .d-line-flaggable.d-checked { color: #ff8a80; }
+/* Classification pass — nothing happens to a line until the scan
+   bar reaches it. Most lines never change at all: silence is the
+   default verdict. The three lines TrustLayer has something to
+   say about settle into their own color as the bar passes —
+   green for confirmed, amber for "exists but contradicts the
+   docs," red for "not documented at all." Same three colors used
+   everywhere else on the page for the same three meanings. */
+/* The .c-str / .c-kw spans set their own color, which otherwise wins
+   over the parent line's color (an inherited value never beats an
+   element's own rule) — so the checked-state color has to be repeated
+   on the spans directly, or the line only half-recolors: dashes and
+   colons shift, the actual value stays syntax-green forever. */
+.demo-code .d-line-success.d-checked,
+.demo-code .d-line-success.d-checked .c-str,
+.demo-code .d-line-success.d-checked .c-kw { color: #6be0d0; }
+
+.demo-code .d-line-warning.d-checked,
+.demo-code .d-line-warning.d-checked .c-str,
+.demo-code .d-line-warning.d-checked .c-kw { color: #ffc178; }
+
+.demo-code .d-line-flaggable.d-checked,
+.demo-code .d-line-flaggable.d-checked .c-str,
+.demo-code .d-line-flaggable.d-checked .c-kw { color: #ff8a80; }
  
 /* The one line TrustLayer flagged collapses away once the fix has
    been applied — the code doesn't get swapped for a new block, it
@@ -589,13 +695,32 @@ a { color: inherit; }
  
 .demo-verdict-slot {
   position: relative;
-  margin-top: 14px;
-  min-height: 40px;
+  margin-top: 20px;
 }
- 
+
+/* Each notification gets its own collapsible row instead of all
+   three sharing one absolute inset:0 spot. Collapsed by default
+   (0fr — zero height, nothing reserved); growing to 1fr reveals
+   it and, because rows sit in normal flow, pushes any row below
+   it further down rather than covering it up. */
+.demo-verdict-row {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s var(--ease);
+}
+
+.demo-verdict-row.is-shown { grid-template-rows: 1fr; }
+
+.demo-verdict-row-inner { overflow: hidden; min-height: 0; }
+
+/* Gap between two notifications when both are up — lives on the
+   later row's margin so a collapsed (0-height) row above never
+   leaves a phantom gap of its own. */
+.demo-verdict-row + .demo-verdict-row .demo-verdict {
+  margin-top: 8px;
+}
+
 .demo-verdict {
-  position: absolute;
-  inset: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -607,17 +732,18 @@ a { color: inherit; }
   letter-spacing: -0.005em;
   font-family: var(--font-mono);
   opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  transform: translateY(3px);
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
 }
- 
-.demo-verdict.is-shown { opacity: 1; transform: translateY(0); }
- 
+
+.demo-verdict-row.is-shown .demo-verdict { opacity: 1; transform: translateY(0); }
+
+.demo-verdict-warning { background: rgba(255, 159, 10, 0.14); color: #ffc178; }
 .demo-verdict-success { background: rgba(20, 184, 162, 0.14); color: #6be0d0; }
  
 /* Arrives quietly, after the corrected code has had a moment to
    sit there and just look right — no celebration, it simply exists. */
-.demo-verdict-final.is-shown {
+.demo-verdict-row-final.is-shown .demo-verdict-final {
   transition: opacity 0.6s var(--ease) 0.25s, transform 0.6s var(--ease) 0.25s;
 }
  
@@ -637,6 +763,16 @@ a { color: inherit; }
  
 .tag-icon-error { background: var(--error); }
 .tag-icon-success { background: var(--teal); }
+
+/* The warning glyph is already an amber triangle — it doesn't need
+   a colored circle behind it the way the plain ✗ and ✓ marks do. */
+.tag-icon-warning {
+  background: none;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  font-size: 13px;
+}
  
 /* Prompt view — the corrected instruction, written out word by
    word so it reads as generated, not pasted. */
@@ -708,7 +844,7 @@ a { color: inherit; }
 }
  
 @media (max-width: 480px) {
-  .demo-window-body { height: 316px; }
+  .demo-window-body { height: 356px; }
   .demo-flow-bar { display: none; }
 }
  
@@ -1035,7 +1171,7 @@ a { color: inherit; }
   .subhead { max-width: 400px; }
   .cta-wrap { margin-bottom: var(--sp-12); }
  
-  .demo-window-body { padding: var(--sp-4) var(--sp-4) var(--sp-5); }
+  .demo-window-body { padding: var(--sp-7) var(--sp-7) var(--sp-8); }
   .demo-code, .demo-prompt { font-size: 11.5px; }
  
   .accordions { padding: 0 var(--sp-5); }
