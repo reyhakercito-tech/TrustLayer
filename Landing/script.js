@@ -152,12 +152,18 @@
     const codeEl = document.getElementById('demoCode');
     const codeLines = Array.from(codeEl.querySelectorAll('.d-line'));
     const flagFold = document.getElementById('demoFlagFold');
-    const verdict = document.getElementById('demoVerdict');
-    const verifiedBadge = document.getElementById('demoVerifiedBadge');
+    const warningLine = codeEl.querySelector('.d-line-warning');
+    const imageTag = document.getElementById('demoImageTag');
+    const codeCursor = document.getElementById('demoCodeCursor');
+    const verdictWarningRow = document.getElementById('demoVerdictWarningRow');
+    const verdictRow = document.getElementById('demoVerdictRow');
+    const verdictSuccessRow = document.getElementById('demoVerdictSuccessRow');
     const promptEl = document.getElementById('demoPrompt');
 
     const QUESTION_TEXT = 'Generate a Docker Compose configuration for Immich.';
     const META_TEXT = '→ corrected prompt sent back to the assistant';
+    const ORIGINAL_TAG = 'ghcr.io/immich-app/immich-server:release';
+    const PINNED_TAG = 'ghcr.io/immich-app/immich-server:v1.118.0';
 
     const LABELS = {
       1: 'AI assistant',
@@ -167,7 +173,7 @@
     };
 
     const PROMPT_TEXT =
-      'TrustLayer flagged IMMICH_CACHE_MODE — it isn\u2019t a documented Immich environment variable. Regenerate the Docker Compose file without it, using only variables listed in the official docs.';
+      'TrustLayer flagged two issues: IMMICH_CACHE_MODE isn\u2019t a documented Immich environment variable, and the \u2019:release\u2019 image tag contradicts the docs\u2019 guidance to pin an explicit version. Regenerate the Docker Compose file without the invalid variable, with a pinned image tag, using only what the official docs list.';
 
     let timers = [];
     let idleTimer = null;
@@ -196,7 +202,9 @@
 
     // Types the corrected-prompt sentence in natural word bursts —
     // deliberately not a per-character typewriter, closer to how a
-    // generated answer actually streams in.
+    // generated answer actually streams in. Mostly single words with
+    // an occasional two-word burst, and a slower, less regular pace
+    // than a flat interval — closer to how tokens actually arrive.
     function typePrompt(onDone) {
       const words = PROMPT_TEXT.split(' ');
       promptEl.textContent = '';
@@ -207,37 +215,76 @@
       let i = 0;
       const step = () => {
         if (i >= words.length) { cursor.remove(); onDone && onDone(); return; }
-        const chunk = words.slice(i, i + (Math.random() > 0.6 ? 2 : 1)).join(' ') + ' ';
+        const chunk = words.slice(i, i + (Math.random() > 0.78 ? 2 : 1)).join(' ') + ' ';
         cursor.insertAdjacentText('beforebegin', chunk);
         i += chunk.trim().split(' ').length;
-        after(45 + Math.random() * 55, step);
+        after(70 + Math.random() * 85, step);
       };
       step();
     }
 
-    // Checks each line of the code in sequence — calm, one at a
-    // time, ending on the single line that doesn't match the docs.
+    // The scan bar sweeps once, at a fixed pace, top to bottom — a
+    // single continuous pass, not a per-line loop. While it travels,
+    // nothing happens. Only the three lines TrustLayer has something
+    // to say about change color, at the moment the bar reaches them:
+    // green (confirmed), amber (contradicts the docs), red (not
+    // documented). The red finding gets real weight — the line turns
+    // red, then there's a genuine pause before the notice underneath
+    // appears, instead of both landing in the same instant.
     function scanLines(onDone) {
       codeEl.classList.add('is-checking');
       codeLines.forEach((l) => l.classList.remove('d-checked'));
+      verdictWarningRow.classList.remove('is-shown');
+      verdictRow.classList.remove('is-shown');
 
-      let i = 0;
-      const step = () => {
-        if (i >= codeLines.length) { after(300, () => { verdict.classList.add('is-shown'); onDone && onDone(); }); return; }
-        codeLines[i].classList.add('d-checked');
-        i += 1;
-        after(130, step);
-      };
-      after(300, step);
+      const successLine = codeEl.querySelector('.d-line-success');
+      const errorLine = codeEl.querySelector('.d-line-flaggable');
+
+      after(670, () => {
+        warningLine && warningLine.classList.add('d-checked');
+        after(260, () => verdictWarningRow.classList.add('is-shown'));   // the amber finding: exists, but contradicts the docs
+      });
+      after(1470, () => successLine && successLine.classList.add('d-checked'));
+      after(1730, () => {
+        errorLine && errorLine.classList.add('d-checked');
+        after(450, () => {                          // the pause that gives the finding weight
+          verdictRow.classList.add('is-shown');     // grows in above the amber row and pushes it down — both stay up together
+          codeEl.classList.remove('is-checking');   // sweep's done its pass — fade the bar out, don't leave it parked
+          onDone && onDone();
+        });
+      });
     }
 
-    // The fix lands as an in-place mutation of the same block:
-    // the flagged line retracts, the error tag gives way to the
-    // verified one. Nothing here is a new screen.
+    // Re-runs the same scan bar over the corrected block. It's the
+    // same sweep as state 2, just restarted — proof the "verified"
+    // badge is a second check, not a rubber stamp on the fix.
+    function rescan(onDone) {
+      codeEl.classList.remove('is-checking');
+      void codeEl.offsetWidth;               // force a reflow so the keyframe animation replays
+      codeEl.classList.add('is-checking');
+      after(2400, () => {
+        codeEl.classList.remove('is-checking'); // second pass is done too — bar fades out before the verified badge lands
+        onDone && onDone();
+      });
+    }
+
+    // The fix lands as an in-place mutation of the same block: the
+    // flagged line retracts, the image tag gets pinned, both findings
+    // clear — then TrustLayer actually re-scans the result before the
+    // verified badge appears, rather than just asserting it's fixed.
     function applyFix() {
       flagFold.classList.add('is-collapsed');
-      verdict.classList.remove('is-shown');
-      after(350, () => verifiedBadge.classList.add('is-shown'));
+      verdictRow.classList.remove('is-shown');       // safety net — normally already cleared before the phase-3 handoff
+      verdictWarningRow.classList.remove('is-shown'); // (see run()) so nothing is left mid-fade to flash back into view here
+      imageTag.textContent = PINNED_TAG;
+      warningLine && warningLine.classList.remove('d-checked');
+      after(500, () => {
+        rescan(() => {
+          demoWindow.classList.remove('is-rechecking');
+          demoLabel.textContent = LABELS[4];
+          verdictSuccessRow.classList.add('is-shown');
+        });
+      });
     }
 
     // Swaps views as a two-step handoff (outgoing settles away,
@@ -254,8 +301,12 @@
       codeEl.classList.remove('is-checking');
       codeLines.forEach((l) => l.classList.remove('d-checked'));
       flagFold.classList.remove('is-collapsed');
-      verdict.classList.remove('is-shown');
-      verifiedBadge.classList.remove('is-shown');
+      imageTag.textContent = ORIGINAL_TAG;
+      codeCursor.classList.remove('is-visible');
+      verdictWarningRow.classList.remove('is-shown');
+      verdictRow.classList.remove('is-shown');
+      verdictSuccessRow.classList.remove('is-shown');
+      demoWindow.classList.remove('is-rechecking');
       contextLine.textContent = QUESTION_TEXT;
       contextLine.classList.remove('is-meta');
       promptEl.textContent = '';
@@ -266,26 +317,37 @@
       window.clearTimeout(idleTimer);
       resetAll();
 
-      setPhase(1);                                  // state 1 — the assistant answers, and it gets to sit there
-      after(4100, () => {
-        setPhase(2);                                // state 2 — TrustLayer checks it, same block, same window
+      // Every gap below is deliberate: the assistant needs a beat to
+      // "think" before it writes, and every state needs a genuine
+      // pause after it settles so the sequence reads at the speed a
+      // person actually reads, not the speed an animation plays.
+
+      setPhase(1);                                    // state 1 — thinks, writes (staggered, not uniform), then sits
+      after(3200, () => codeCursor.classList.add('is-visible')); // a brief live-cursor beat once the last line lands
+      after(5600, () => {                              // ≈0.75s think + ≈2.4s writing + ≈2.5s to actually read it
+        setPhase(2);                                   // state 2 — TrustLayer checks it, same block, same window
+        codeCursor.classList.remove('is-visible');
         scanLines();
       });
-      after(7700, () => {
+      after(10800, () => {                             // ≈2.5s scanning (amber finding, then red) + pause to read it
         setPhase(3);
-        handoff(viewCode, viewPrompt, 200, () => {   // state 3 — the one real detour
-          after(150, () => typePrompt());
+        verdictRow.classList.remove('is-shown');        // clear both findings now, while they fade out together with
+        verdictWarningRow.classList.remove('is-shown'); // the code view itself — nothing left lingering to flash later
+        handoff(viewCode, viewPrompt, 250, () => {      // state 3 — the one real detour
+          after(400, () => typePrompt());               // a small beat before it starts "writing" the fix
         });
       });
-      after(11300, () => {
+      after(16000, () => {                             // ≈2.5s typing + ≈2.7s pause to read the corrected prompt
         setPhase(4);
+        demoWindow.classList.add('is-rechecking');      // dot goes violet again — this is a real second pass
+        demoLabel.textContent = 'TrustLayer — re-verifying';
         contextLine.textContent = META_TEXT;
         contextLine.classList.add('is-meta');
-        handoff(viewPrompt, viewCode, 200, () => {   // state 4 — back to the same window, now correct
-          applyFix();
+        handoff(viewPrompt, viewCode, 250, () => {      // state 4 — back to the same window, now corrected
+          applyFix();                                   // ≈0.5s settle + ≈2.4s re-scan before it's declared clean
         });
       });
-      after(13500, () => {
+      after(20200, () => {                              // a hold on the verified result before it's "done"
         demoWindow.classList.add('is-done');
         scheduleIdleReplay();
       });
@@ -300,10 +362,11 @@
       // Skip the sequence entirely — land on the calm, finished
       // state so it can just be read.
       resetAll();
-      codeEl.classList.add('is-checking');
       codeLines.forEach((l) => l.classList.add('d-checked'));
+      warningLine && warningLine.classList.remove('d-checked'); // already fixed in this end state
+      imageTag.textContent = PINNED_TAG;
       flagFold.classList.add('is-collapsed');
-      verifiedBadge.classList.add('is-shown');
+      verdictSuccessRow.classList.add('is-shown');
       contextLine.textContent = META_TEXT;
       contextLine.classList.add('is-meta');
       setPhase(4);
@@ -313,6 +376,21 @@
       demoWindow.addEventListener('click', () => { if (demoWindow.classList.contains('is-done')) run(); });
       demoReplay.addEventListener('click', (e) => { e.stopPropagation(); run(); });
       window.addEventListener('resize', () => setFlowStep(Number(demoWindow.dataset.phase)));
+
+      // setTimeout doesn't pause in a backgrounded tab — it throttles
+      // and batches instead, so returning to the tab could previously
+      // fire several queued phase changes at once and leave two states
+      // visually overlapping. Cancel everything the instant the tab
+      // goes to background, and start clean the instant it comes back,
+      // rather than trying to resume mid-sequence.
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          clearTimers();
+          window.clearTimeout(idleTimer);
+        } else {
+          run();
+        }
+      });
     }
   }
 
