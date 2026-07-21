@@ -28,6 +28,38 @@
   --teal: #14b8a2;
   --error: #ff453a;
   --warning: #ff9f0a;
+
+  /* Tokens for the "solid ink" pill buttons (Join Waitlist, Notify
+     me) — kept separate from --ink itself, since in dark mode the
+     button needs to stay a light pill with dark text, i.e. the
+     inverse relationship flips independently of body text color. */
+  --button-bg: var(--ink);
+  --button-bg-hover: #000000;
+  --button-fg: #ffffff;
+
+  /* Subtle interactive-state overlays (icon-button hovers, link
+     hover borders) — dark-on-light in light mode, light-on-dark
+     in dark mode, rather than a fixed black at low opacity that
+     all but disappears on a dark surface. */
+  --hover-tint: rgba(0, 0, 0, 0.06);
+  --hover-border: rgba(0, 0, 0, 0.12);
+
+  --nav-scrolled-bg: rgba(255, 255, 255, 0.78);
+  --nav-scrolled-border: rgba(0, 0, 0, 0.06);
+
+  /* A single black-shadow scale, reused at consistent alpha steps
+     across every elevated surface (nav pill, hero CTA, step cards).
+     Kept as tokens — not literal rgba() — so dark mode can deepen
+     them to stay visible against a dark surface instead of every
+     shadow quietly vanishing into the background. */
+  --shadow-1: rgba(0, 0, 0, 0.06);
+  --shadow-2: rgba(0, 0, 0, 0.08);
+  --shadow-3: rgba(0, 0, 0, 0.1);
+  --shadow-4: rgba(0, 0, 0, 0.14);
+  --shadow-5: rgba(0, 0, 0, 0.16);
+  --shadow-6: rgba(0, 0, 0, 0.18);
+  --shadow-7: rgba(0, 0, 0, 0.2);
+  --shadow-8: rgba(0, 0, 0, 0.24);
  
   --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -57,7 +89,54 @@
   --sp-24: 96px;
   --sp-28: 112px;
   --sp-32: 128px;
+
+  color-scheme: light;
 }
+
+/* ----- Dark theme -----
+   A layered dark-gray system (macOS/Apple style), not pure black:
+   the page sits on --bg, cards and inputs step up to --bg-subtle,
+   separators sit on --line — three distinct-but-close grays instead
+   of one flat #000 with white lines on top. Same accents (blue/
+   violet/teal/error/warning) both ways — they're already legible on
+   a dark surface, so only the neutral scale, the shadow scale, and
+   the button-inversion tokens actually need to flip. The demo
+   window is intentionally dark in both themes (a fixed "terminal"
+   surface, not something that follows the page), so nothing there
+   changes here. */
+:root[data-theme="dark"] {
+  --bg: #1c1c1e;
+  --bg-subtle: #242426;
+  --ink: #f5f5f7;
+  --ink-secondary: #a1a1a6;
+  --ink-tertiary: #8e8e93;
+  --line: #38383a;
+
+  --button-bg: #f5f5f7;
+  --button-bg-hover: #ffffff;
+  --button-fg: #1d1d1f;
+
+  --hover-tint: rgba(255, 255, 255, 0.08);
+  --hover-border: rgba(255, 255, 255, 0.16);
+
+  --nav-scrolled-bg: rgba(28, 28, 30, 0.72);
+  --nav-scrolled-border: rgba(255, 255, 255, 0.08);
+
+  /* A flat black shadow this close to a dark-gray surface is nearly
+     invisible at light-mode alphas — deepened here so elevation
+     still reads without any single shadow looking heavy-handed. */
+  --shadow-1: rgba(0, 0, 0, 0.22);
+  --shadow-2: rgba(0, 0, 0, 0.26);
+  --shadow-3: rgba(0, 0, 0, 0.3);
+  --shadow-4: rgba(0, 0, 0, 0.36);
+  --shadow-5: rgba(0, 0, 0, 0.4);
+  --shadow-6: rgba(0, 0, 0, 0.44);
+  --shadow-7: rgba(0, 0, 0, 0.48);
+  --shadow-8: rgba(0, 0, 0, 0.54);
+
+  color-scheme: dark;
+}
+
  
 * { margin: 0; padding: 0; box-sizing: border-box; }
  
@@ -73,8 +152,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: 'kern' 1, 'liga' 1;
+  transition: background-color 0.4s var(--ease), color 0.4s var(--ease);
 }
  
+/* Theme-switch fallback: anything that recolors between light and
+   dark and doesn't already define its own transition (most plain
+   text, inline code, dividers) eases here instead of snapping.
+   Elements with a more specific transition rule of their own — the
+   buttons, the nav, the toggle — keep using that instead, since a
+   selector's own transition list always wins over this one. */
+*, *::before, *::after {
+  transition: background-color 0.38s var(--ease), border-color 0.38s var(--ease), color 0.38s var(--ease);
+}
+
 a { color: inherit; }
  
 :focus-visible {
@@ -86,6 +176,7 @@ a { color: inherit; }
 /* Pill-shaped controls get a pill-shaped focus ring, not a squared one. */
 .cta-pill:focus-visible,
 .nav-cta:focus-visible,
+.theme-toggle:focus-visible,
 .waitlist-submit:focus-visible,
 .waitlist-cancel:focus-visible,
 .github-link:focus-visible,
@@ -101,16 +192,16 @@ a { color: inherit; }
   inset: 0 0 auto 0;
   z-index: 100;
   padding: var(--sp-5) 0;
-  transition: padding 0.5s var(--ease), background 0.5s var(--ease), backdrop-filter 0.5s var(--ease), border-color 0.5s var(--ease);
+  transition: padding 0.5s var(--ease), background 0.4s var(--ease), backdrop-filter 0.4s var(--ease), border-color 0.4s var(--ease);
   border-bottom: 1px solid transparent;
 }
  
 .nav.scrolled {
   padding: var(--sp-3) 0;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--nav-scrolled-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom-color: rgba(0, 0, 0, 0.06);
+  border-bottom-color: var(--nav-scrolled-border);
 }
  
 .nav-inner {
@@ -128,6 +219,141 @@ a { color: inherit; }
   font-size: 16px;
   letter-spacing: -0.015em;
 }
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* A small piece of glass, not a flat icon button. The sphere itself
+   carries the theme's state as a material property — dark glass in
+   light mode, pale glass in dark mode — rather than swapping a sun
+   glyph for a moon glyph on top of a flat disc. Same footprint and
+   visual weight as the waitlist's close button, so it still sits
+   quietly next to the CTA. */
+.theme-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: transform 0.3s var(--ease);
+}
+
+.theme-toggle:hover .theme-toggle-sphere { transform: scale(1.06); }
+.theme-toggle:active .theme-toggle-sphere { transform: scale(0.9); transition-duration: 0.15s; }
+
+/* The sphere's own volume: a dark-glass base in light mode that
+   inverts to pale glass in dark mode. Three layered shadows do the
+   physical work — a tight inner rim for the glass edge, a soft
+   inner falloff for the curvature, and a small cast shadow for
+   contact with the surface behind it — so it reads as a solid,
+   faintly reflective object rather than a coloured dot. */
+.theme-toggle-sphere {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #5a5a5e 0%, #313134 46%, #1c1c1e 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.22),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.5),
+    0 1px 2px var(--shadow-3);
+  transition: background 0.6s var(--ease), box-shadow 0.6s var(--ease), transform 0.3s var(--ease);
+}
+
+/* The highlight is a separate layer so it can stay put (light hits
+   glass from the same direction regardless of theme) while the
+   sphere's base color inverts underneath it. */
+.theme-toggle-highlight {
+  position: absolute;
+  top: 3px;
+  left: 4.5px;
+  width: 7px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+  filter: blur(0.4px);
+  opacity: 0.8;
+  transition: opacity 0.5s var(--ease);
+}
+
+[data-theme="dark"] .theme-toggle-sphere {
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #e2e2e6 46%, #b9b9c0 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.1),
+    0 1px 3px var(--shadow-4);
+}
+
+[data-theme="dark"] .theme-toggle-highlight { opacity: 0.55; }
+
+/* ----- The light/dark reveal: native View Transitions API -----
+   No overlay div, no custom property tweened frame-by-frame, no
+   radial-gradient repainting the whole viewport on every tick. The
+   browser itself snapshots the full page twice — once just before
+   .theme-transitioning flips data-theme, once just after — as two
+   plain images: ::view-transition-old(root) (the outgoing theme)
+   and ::view-transition-new(root) (the incoming one, stacked on
+   top by the UA by default). Because the "new" snapshot is a real
+   screenshot of the page already wearing its new colors, there is
+   no separate text-color transition to fall out of sync with the
+   reveal — wherever the wipe has reached, the text there is
+   already correct, by construction, not by timing.
+   The wipe itself is just clip-path on that top image: a circle
+   that grows from the toggle's exact center out past the farthest
+   corner. Outside the circle the old snapshot still shows through
+   from underneath; inside it, the new one does. Played light→dark
+   this reads as dark spreading out of the button; the exact same
+   animation played dark→light reads as the dark snapshot's own
+   circle collapsing back toward the button as it's replaced —
+   same rule, both directions, no branching needed.
+   --reveal-x / --reveal-y / --reveal-r are set from script.js right
+   before the transition starts (button's screen position, and a
+   radius past the farthest viewport corner). Both the growing
+   circle and the whole snapshot pair are just images being
+   composited by the GPU — no layout, no paint — so this stays
+   smooth through scroll and at whatever refresh rate the display
+   and browser support. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  /* Kill the UA's default cross-fade (animation + mix-blend-mode)
+     — the clip-path wipe below replaces it entirely. */
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  clip-path: circle(0px at var(--reveal-x, 50%) var(--reveal-y, 50%));
+}
+
+/* Only present for the ~780ms a toggle animation is actually
+   running (added/removed from <html> in script.js) — this keeps
+   the clip-path above inert (and instantly correct, no visible
+   flash of a circle) on every normal paint that isn't a theme
+   transition. */
+html.theme-transitioning::view-transition-new(root) {
+  animation: theme-reveal-grow 780ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes theme-reveal-grow {
+  to {
+    clip-path: circle(var(--reveal-r, 150vmax) at var(--reveal-x, 50%) var(--reveal-y, 50%));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning::view-transition-new(root) {
+    animation: none;
+  }
+}
  
 /* ===================== BUTTONS =====================
    One button language for the whole page: solid ink, a quiet
@@ -144,31 +370,31 @@ a { color: inherit; }
   font-family: var(--font-body);
   font-weight: 600;
   letter-spacing: -0.008em;
-  color: #fff;
-  background: var(--ink);
+  color: var(--button-fg);
+  background: var(--button-bg);
   border: none;
   border-radius: 999px;
   cursor: pointer;
-  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), background 0.3s var(--ease), opacity 0.3s var(--ease);
+  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), background 0.38s var(--ease), color 0.38s var(--ease), opacity 0.3s var(--ease);
 }
  
 .nav-cta {
   font-size: 13.5px;
   padding: 8px 18px;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06), 0 4px 10px -2px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 1px 1px var(--shadow-1), 0 4px 10px -2px var(--shadow-4);
 }
  
 .cta-pill {
   font-size: 16px;
   padding: 15px 32px;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06), 0 6px 16px -4px rgba(0, 0, 0, 0.16), 0 18px 32px -12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 1px var(--shadow-1), 0 6px 16px -4px var(--shadow-5), 0 18px 32px -12px var(--shadow-7);
 }
  
 .nav-cta:hover,
 .cta-pill:hover {
-  background: #000;
+  background: var(--button-bg-hover);
   transform: translateY(-1px);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 8px 18px -4px rgba(0, 0, 0, 0.18), 0 22px 40px -14px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 1px 1px var(--shadow-2), 0 8px 18px -4px var(--shadow-6), 0 22px 40px -14px var(--shadow-8);
 }
  
 .nav-cta:active,
@@ -180,7 +406,8 @@ a { color: inherit; }
 .cta-pill.joined,
 .nav-cta.joined {
   background: var(--teal);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06), 0 6px 16px -4px rgba(20, 184, 162, 0.22);
+  color: #fff;
+  box-shadow: 0 1px 1px var(--shadow-1), 0 6px 16px -4px rgba(20, 184, 162, 0.22);
   cursor: default;
 }
  
@@ -190,7 +417,7 @@ a { color: inherit; }
 .nav-cta.joined:active {
   transform: none;
   background: var(--teal);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06), 0 6px 16px -4px rgba(20, 184, 162, 0.22);
+  box-shadow: 0 1px 1px var(--shadow-1), 0 6px 16px -4px rgba(20, 184, 162, 0.22);
 }
  
 /* ===================== HERO ===================== */
@@ -275,7 +502,7 @@ a { color: inherit; }
   opacity: 0;
   transform: scale(0.96);
   pointer-events: none;
-  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease), background-color 0.38s var(--ease), border-color 0.38s var(--ease);
 }
  
 .cta-wrap.open .waitlist-form {
@@ -300,17 +527,17 @@ a { color: inherit; }
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 14px;
-  color: #fff;
-  background: var(--ink);
+  color: var(--button-fg);
+  background: var(--button-bg);
   border: none;
   padding: 10px 18px;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.3s var(--ease), transform 0.3s var(--ease);
+  transition: background 0.38s var(--ease), color 0.38s var(--ease), transform 0.3s var(--ease);
 }
  
-.waitlist-submit:hover { background: #000; }
+.waitlist-submit:hover { background: var(--button-bg-hover); }
 .waitlist-submit:active { transform: scale(0.96); }
  
 .waitlist-cancel {
@@ -324,7 +551,7 @@ a { color: inherit; }
   transition: background 0.25s var(--ease), color 0.25s var(--ease);
 }
  
-.waitlist-cancel:hover { background: rgba(0, 0, 0, 0.06); color: var(--ink); }
+.waitlist-cancel:hover { background: var(--hover-tint); color: var(--ink); }
  
 .waitlist-success {
   font-size: 15px;
@@ -387,20 +614,38 @@ a { color: inherit; }
     0 2px 6px rgba(0, 0, 0, 0.08),
     0 12px 28px -6px rgba(0, 0, 0, 0.18),
     0 40px 72px -16px rgba(0, 0, 0, 0.3),
-    inset 0 1px rgba(255, 255, 255, 0.06);
- 
-  transition: box-shadow 0.4s var(--ease);
+    inset 0 1px rgba(255, 255, 255, 0.07),
+    inset 0 -1px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
- 
-.demo-window.is-done { cursor: pointer; }
- 
-.demo-window.is-done:hover {
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.05),
-    0 3px 8px rgba(0, 0, 0, 0.1),
-    0 16px 36px -6px rgba(0, 0, 0, 0.22),
-    0 52px 96px -16px rgba(0, 0, 0, 0.34),
-    inset 0 1px rgba(255, 255, 255, 0.06);
+
+/* A soft light that tracks the cursor — the window's one nod to
+   being a physical, faintly reflective surface rather than a flat
+   panel. Deliberately restrained: a single very large, very-low-
+   opacity radial highlight, positioned with CSS custom properties
+   so moving it only ever repaints (never triggers layout), and a
+   plain "normal" blend rather than screen/overlay — anything that
+   reacts more strongly to the artwork underneath starts to read as
+   an effect instead of a material. Fades in quickly on hover, out
+   slowly on leave (the asymmetry is what makes it feel like light,
+   not a UI state toggling). Absent entirely under reduced motion. */
+.demo-window-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    640px circle at var(--sheen-x, 50%) var(--sheen-y, 38%),
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.018) 32%,
+    transparent 62%
+  );
+  transition: opacity 0.9s var(--ease);
+}
+
+.demo-window.is-hovering .demo-window-sheen {
+  opacity: 1;
+  transition: opacity 0.4s var(--ease);
 }
  
 .demo-window-head {
@@ -486,10 +731,10 @@ a { color: inherit; }
   overflow: hidden;
   /* Fixed so the window itself never resizes as the content
      changes — the frame stays put, only what's inside it moves.
-     Sized to the tallest state (question + 9 lines + verdict tag)
-     plus the wider padding below, with headroom to spare so
-     nothing ever clips or scrolls. */
-  height: 392px;
+     Sized to the tallest real state: question + 9 lines + both
+     findings shown together with full breathing room between
+     them, plus headroom to spare so nothing ever clips. */
+  height: 440px;
 }
  
 /* Two views only: the code block (states 1, 2 and 4 all live here,
@@ -558,55 +803,72 @@ a { color: inherit; }
   overflow: hidden;
 }
 
-/* The scan bar — a thin line of light, not a laser. It sweeps once
-   per check and nothing else happens while it travels; only the
-   specific lines it passes over ever change. It fades in when a
-   check starts and fades back out the moment that check is done
-   (JS toggles .is-checking off again) — it never just sits there. */
+/* The scan pass — a soft band of light, not a laser line. It's
+   tall and fully feathered top and bottom (like a reflection
+   drifting across glass), brightest through its own center, and
+   it never has a hard edge anywhere. While it travels nothing
+   happens except a very slight lift in the line it's currently
+   over — a whisper of extra brightness, not a highlight. When it's
+   passing a line TrustLayer has something to say about, the band
+   itself warms to amber or red for a moment before the notice
+   underneath appears, so the finding reads as something the light
+   discovered, not something that just popped up on its own. */
 .demo-scan-bar {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: -12px;
+  right: -12px;
   top: 0;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg,
-    transparent,
-    rgba(10, 132, 255, 0.75) 12%,
-    rgba(170, 205, 255, 1) 50%,
-    rgba(10, 132, 255, 0.75) 88%,
-    transparent);
-  box-shadow:
-    0 0 8px rgba(10, 132, 255, 0.65),
-    0 0 22px rgba(10, 132, 255, 0.35),
-    0 0 44px rgba(10, 132, 255, 0.16);
-  opacity: 0;
+  height: 84px;
+  margin-top: -42px;
   pointer-events: none;
-  transition: opacity 0.35s var(--ease);
+  opacity: 0;
+  background: linear-gradient(to bottom,
+    transparent,
+    rgba(200, 220, 255, 0.05) 32%,
+    rgba(210, 226, 255, 0.1) 50%,
+    rgba(200, 220, 255, 0.05) 68%,
+    transparent);
+  transition: opacity 0.5s var(--ease);
   z-index: 2;
 }
 
-/* A soft trailing glow above the line — reads as a beam sweeping
-   down the block rather than a bare pixel travelling on its own. */
-.demo-scan-bar::before {
+.demo-scan-bar::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  height: 52px;
-  background: linear-gradient(to bottom, transparent, rgba(10, 132, 255, 0.09));
+  inset: 0;
+  background: linear-gradient(to bottom,
+    transparent,
+    var(--scan-tint, transparent) 50%,
+    transparent);
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
 }
+
+.demo-scan-bar.is-warning::after { --scan-tint: rgba(255, 159, 10, 0.16); opacity: 1; }
+.demo-scan-bar.is-error::after { --scan-tint: rgba(255, 69, 58, 0.16); opacity: 1; }
 
 .demo-code.is-checking .demo-scan-bar {
   opacity: 1;
   animation: scanSweep 2.4s linear forwards;
 }
 
+/* Fading out is a separate step from stopping — opacity eases to
+   zero while the band is still held at the bottom of its sweep
+   (the keyframe's forwards fill keeps it there), and only once
+   it's fully invisible does the animation itself get torn down.
+   That order is what keeps it from ever visibly jumping back to
+   the top. */
+.demo-code.is-checking.is-scan-done .demo-scan-bar { opacity: 0; }
+
 @keyframes scanSweep {
   from { top: 0%; }
   to { top: 100%; }
 }
+
+/* The whisper of brightness a line gets as the band passes over
+   it — every line gets this once, whether or not it turns out to
+   have a finding. */
+.d-line.is-lit { color: rgba(255, 255, 255, 0.98); }
  
 .d-line {
   line-height: 1.78;
@@ -706,7 +968,7 @@ a { color: inherit; }
 .demo-verdict-row {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.45s var(--ease);
+  transition: grid-template-rows 0.5s var(--ease);
 }
 
 .demo-verdict-row.is-shown { grid-template-rows: 1fr; }
@@ -715,9 +977,11 @@ a { color: inherit; }
 
 /* Gap between two notifications when both are up — lives on the
    later row's margin so a collapsed (0-height) row above never
-   leaves a phantom gap of its own. */
+   leaves a phantom gap of its own. Generous on purpose: these are
+   two separate findings, not one stacked list, and they should
+   never read as touching. */
 .demo-verdict-row + .demo-verdict-row .demo-verdict {
-  margin-top: 8px;
+  margin-top: 16px;
 }
 
 .demo-verdict {
@@ -733,7 +997,10 @@ a { color: inherit; }
   font-family: var(--font-mono);
   opacity: 0;
   transform: translateY(3px);
-  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+  /* The row's height finishes growing before the pill visibly
+     settles in — a short delay on the fade keeps the two from
+     ever appearing to arrive at once and crowd each other. */
+  transition: opacity 0.4s var(--ease) 0.15s, transform 0.4s var(--ease) 0.15s;
 }
 
 .demo-verdict-row.is-shown .demo-verdict { opacity: 1; transform: translateY(0); }
@@ -840,11 +1107,11 @@ a { color: inherit; }
   background: var(--ink);
   border-radius: 2px;
   transform: translateX(0);
-  transition: transform 0.6s var(--ease), width 0.6s var(--ease);
+  transition: transform 0.6s var(--ease), width 0.6s var(--ease), background-color 0.38s var(--ease);
 }
  
 @media (max-width: 480px) {
-  .demo-window-body { height: 356px; }
+  .demo-window-body { height: 476px; padding: var(--sp-6) var(--sp-6) var(--sp-7); }
   .demo-flow-bar { display: none; }
 }
  
@@ -921,7 +1188,7 @@ a { color: inherit; }
   font-weight: 700;
   font-size: 20px;
   letter-spacing: -0.012em;
-  transition: opacity 0.3s var(--ease);
+  transition: opacity 0.3s var(--ease), color 0.38s var(--ease);
 }
  
 .accordion-trigger:hover .trigger-label { opacity: 0.72; }
@@ -957,9 +1224,9 @@ a { color: inherit; }
   cursor: default;
  
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.08),
-    0 10px 24px -4px rgba(0, 0, 0, 0.16),
-    0 28px 48px -16px var(--shadow-tint, rgba(0, 0, 0, 0.2));
+    0 1px 2px var(--shadow-2),
+    0 10px 24px -4px var(--shadow-5),
+    0 28px 48px -16px var(--shadow-tint, var(--shadow-7));
  
   transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease);
 }
@@ -974,9 +1241,9 @@ a { color: inherit; }
   transform: translateY(-10px) rotate(0deg);
   z-index: 20;
   box-shadow:
-    0 2px 3px rgba(0, 0, 0, 0.1),
-    0 14px 28px -4px rgba(0, 0, 0, 0.18),
-    0 36px 64px -16px var(--shadow-tint, rgba(0, 0, 0, 0.24));
+    0 2px 3px var(--shadow-3),
+    0 14px 28px -4px var(--shadow-6),
+    0 36px 64px -16px var(--shadow-tint, var(--shadow-8));
 }
  
 .step-card::before {
@@ -1053,7 +1320,7 @@ a { color: inherit; }
   font-size: 15px;
   letter-spacing: -0.005em;
   color: var(--ink);
-  transition: opacity 0.3s var(--ease);
+  transition: opacity 0.3s var(--ease), color 0.38s var(--ease);
 }
  
 .faq-trigger:hover { opacity: 0.68; }
@@ -1083,6 +1350,15 @@ a { color: inherit; }
   color: var(--ink-secondary);
   padding-bottom: var(--sp-6);
   max-width: 560px;
+}
+
+.faq-panel-inner code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--bg-subtle);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--ink);
 }
  
 /* ===================== FOOTER ===================== */
@@ -1119,13 +1395,13 @@ a { color: inherit; }
   padding: 9px 18px;
   border-radius: 999px;
   border: 1px solid var(--line);
-  transition: background 0.3s var(--ease), transform 0.3s var(--ease), border-color 0.3s var(--ease);
+  transition: background 0.38s var(--ease), color 0.38s var(--ease), transform 0.3s var(--ease), border-color 0.38s var(--ease);
 }
  
 .github-link:hover,
 .reddit-link:hover {
   background: var(--bg-subtle);
-  border-color: rgba(0, 0, 0, 0.12);
+  border-color: var(--hover-border);
   transform: translateY(-1px);
 }
  
@@ -1161,9 +1437,9 @@ a { color: inherit; }
     margin-top: var(--sp-4) !important;
     transform: none !important;
     box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.08),
-      0 8px 16px -4px rgba(0, 0, 0, 0.14),
-      0 16px 28px -12px var(--shadow-tint, rgba(0, 0, 0, 0.18)) !important;
+      0 1px 2px var(--shadow-2),
+      0 8px 16px -4px var(--shadow-4),
+      0 16px 28px -12px var(--shadow-tint, var(--shadow-6)) !important;
   }
  
   .hero { padding: var(--sp-24) var(--sp-5) var(--sp-14); }
@@ -1171,7 +1447,7 @@ a { color: inherit; }
   .subhead { max-width: 400px; }
   .cta-wrap { margin-bottom: var(--sp-12); }
  
-  .demo-window-body { padding: var(--sp-7) var(--sp-7) var(--sp-8); }
+  .demo-window-body { padding: var(--sp-7) var(--sp-7) var(--sp-8); height: 412px; }
   .demo-code, .demo-prompt { font-size: 11.5px; }
  
   .accordions { padding: 0 var(--sp-5); }
