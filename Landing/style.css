@@ -226,6 +226,29 @@ a { color: inherit; }
   gap: var(--sp-3);
 }
 
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  line-height: 0; /* evita el hueco fantasma que deja line-height bajo una img */
+}
+
+.nav-logo-img {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+/* Solo una imagen visible a la vez, resuelto en CSS puro —
+   el mismo mecanismo que ya usa .theme-toggle-sphere, así que
+   el cambio ocurre en la misma pasada de estilos que el resto
+   del theming y queda capturado dentro del propio snapshot de
+   la view transition (nunca "detrás" o "después" de ella). */
+.nav-logo-img-dark { display: none; }
+
+[data-theme="dark"] .nav-logo-img-light { display: none; }
+[data-theme="dark"] .nav-logo-img-dark { display: block; }
+
 /* A small piece of glass, not a flat icon button. The sphere itself
    carries the theme's state as a material property — dark glass in
    light mode, pale glass in dark mode — rather than swapping a sun
