@@ -9,6 +9,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+
+  <!-- Favicon: se actualiza dinámicamente vía JS al cambiar de tema.
+       El href por defecto (Light) es el de mejor contraste en la
+       mayoría de barras de pestañas antes de que cargue el JS. -->
+  <link rel="icon" id="favicon" type="image/svg+xml" href="assets/Logo_Light.svg">
+
+  <!-- Precarga de ambos logos: el que no se usa al cargar la página
+       también debe estar listo en caché para que el cambio de tema
+       sea instantáneo, sin ir a red a mitad de la transición. -->
+  <link rel="preload" as="image" href="assets/Logo_Light.svg">
+  <link rel="preload" as="image" href="assets/Logo_Dark.svg">
+
   <script>
     // Applied before first paint so a returning visitor's saved
     // theme (or their system preference, first time round) is
@@ -18,6 +30,10 @@
         var saved = localStorage.getItem('trustlayer_theme');
         var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
+
+        // Favicon en sync desde el primer frame, sin esperar a script.js.
+        var favicon = document.getElementById('favicon');
+        if (favicon) favicon.href = theme === 'dark' ? 'assets/Logo_Dark.svg' : 'assets/Logo_Light.svg';
       } catch (err) {
         // localStorage/matchMedia unavailable — falls back to the
         // light default already defined in the stylesheet.
@@ -29,7 +45,10 @@
 
 <nav class="nav" id="nav">
   <div class="nav-inner">
-    <span class="nav-logo">TrustLayer</span>
+    <span class="nav-logo" aria-label="TrustLayer">
+      <img class="nav-logo-img nav-logo-img-light" src="assets/Logo_Light.svg" alt="TrustLayer">
+      <img class="nav-logo-img nav-logo-img-dark" src="assets/Logo_Dark.svg" alt="TrustLayer">
+    </span>
     <div class="nav-actions">
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
         <span class="theme-toggle-sphere" aria-hidden="true">
