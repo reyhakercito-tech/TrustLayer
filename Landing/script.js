@@ -16,6 +16,105 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
+  /* ---------- Dark mode toggle ----------
+     The initial theme (saved choice, or system preference as a
+     fallback) is already applied by the inline script in <head> —
+     this only has to handle the user actually flipping it.
+
+     Built on the native View Transitions API instead of a hand-
+     rolled overlay: document.startViewTransition() has the browser
+     capture the whole page as-is, run the callback below (which
+     just flips data-theme), then capture the page again in its new
+     state — both as plain images, composited by the GPU. Every real
+     element's new color is already baked into that second snapshot,
+     so there's no separate transition to desync from the reveal;
+     wherever the wipe has reached is, by construction, already the
+     right color underneath it.
+     The reveal itself (see ::view-transition-new(root) in
+     style.css) is a clip-path circle grown from the toggle's exact
+     screen position out past the farthest corner — light→dark
+     reads as dark spreading out of the button, dark→light reads as
+     that same dark snapshot's circle collapsing back into it as
+     the light one takes over beneath. One rule, both directions.
+     Browsers without support (and reduced-motion) just flip
+     instantly — no overlay, no fallback fade, nothing left over
+     from the old system to clean up. */
+  const THEME_KEY = 'trustlayer_theme';
+  const themeToggle = document.getElementById('themeToggle');
+  const supportsViewTransitions = typeof document.startViewTransition === 'function';
+
+  function syncThemeToggleA11y(theme) {
+    const isDark = theme === 'dark';
+    themeToggle.setAttribute('aria-pressed', String(isDark));
+    themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+
+  function persistTheme(theme) {
+    try {
+      window.localStorage.setItem(THEME_KEY, theme);
+    } catch (err) {
+      // localStorage unavailable — theme still applies for this visit, just won't persist.
+    }
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    syncThemeToggleA11y(theme);
+    persistTheme(theme);
+  }
+
+  if (themeToggle) {
+    syncThemeToggleA11y(document.documentElement.getAttribute('data-theme') || 'light');
+
+    let animating = false;
+
+    themeToggle.addEventListener('click', () => {
+      if (animating) return;
+      const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+
+      // No snapshot pair to wipe between under reduced motion, or on
+      // a browser that doesn't support the API yet — just flip.
+      if (prefersReducedMotion || !supportsViewTransitions) {
+        applyTheme(next);
+        return;
+      }
+
+      const root = document.documentElement;
+      const rect = themeToggle.getBoundingClientRect();
+      const originX = rect.left + rect.width / 2;
+      const originY = rect.top + rect.height / 2;
+      const maxRadius = Math.hypot(
+        Math.max(originX, window.innerWidth - originX),
+        Math.max(originY, window.innerHeight - originY)
+      ) + 40;
+
+      // Read by the @keyframes in style.css — the click point and
+      // the distance the circle needs to travel to clear every
+      // corner of the current viewport.
+      root.style.setProperty('--reveal-x', `${originX}px`);
+      root.style.setProperty('--reveal-y', `${originY}px`);
+      root.style.setProperty('--reveal-r', `${maxRadius}px`);
+
+      animating = true;
+      // Arms the ::view-transition-new(root) animation in style.css
+      // for the duration of this one transition only.
+      root.classList.add('theme-transitioning');
+
+      const transition = document.startViewTransition(() => {
+        applyTheme(next);
+      });
+
+      // .finished settles after the animation completes (and also
+      // if the transition is skipped/aborted for any reason), so
+      // this is the one place that needs to clean up either way.
+      transition.finished.finally(() => {
+        root.classList.remove('theme-transitioning');
+        animating = false;
+      });
+    });
+  }
+
   /* ---------- Nav CTA scrolls to hero CTA ---------- */
   document.querySelectorAll('[data-scroll-to]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -153,6 +252,12 @@
     const codeLines = Array.from(codeEl.querySelectorAll('.d-line'));
     const flagFold = document.getElementById('demoFlagFold');
     const warningLine = codeEl.querySelector('.d-line-warning');
+    const scanBar = codeEl.querySelector('.demo-scan-bar');
+    const neutralLines = codeLines.filter((l) =>
+      !l.classList.contains('d-line-warning') &&
+      !l.classList.contains('d-line-success') &&
+      !l.classList.contains('d-line-flaggable')
+    );
     const imageTag = document.getElementById('demoImageTag');
     const codeCursor = document.getElementById('demoCodeCursor');
     const verdictWarningRow = document.getElementById('demoVerdictWarningRow');
@@ -179,6 +284,18 @@
     let idleTimer = null;
     const clearTimers = () => { timers.forEach((t) => window.clearTimeout(t)); timers = []; };
     const after = (ms, fn) => { timers.push(window.setTimeout(fn, ms)); };
+
+    // The button is only visually reachable once the demo is done
+    // (opacity/pointer-events are gated on .is-done in CSS) — keep
+    // its keyboard reachability in sync with that instead of leaving
+    // it permanently out of the tab order.
+    function setReplayFocusable(focusable) {
+      if (focusable) {
+        demoReplay.removeAttribute('tabindex');
+      } else {
+        demoReplay.setAttribute('tabindex', '-1');
+      }
+    }
 
     // Moves the underline beneath the active flow word — the only
     // "arrow" this diagram needs.
@@ -223,34 +340,67 @@
       step();
     }
 
+    // Ends a sweep cleanly: the band fades out while it's still
+    // parked at the bottom of its pass (the keyframe's forwards
+    // fill keeps it there), and only once it's fully invisible does
+    // the animation itself get torn down and reset. That order is
+    // what stops it from ever visibly snapping back to the top.
+    function endScan(onFaded) {
+      codeEl.classList.add('is-scan-done');
+      scanBar.classList.remove('is-warning', 'is-error');
+      after(520, () => {
+        codeEl.classList.remove('is-checking', 'is-scan-done');
+        onFaded && onFaded();
+      });
+    }
+
     // The scan bar sweeps once, at a fixed pace, top to bottom — a
-    // single continuous pass, not a per-line loop. While it travels,
-    // nothing happens. Only the three lines TrustLayer has something
-    // to say about change color, at the moment the bar reaches them:
-    // green (confirmed), amber (contradicts the docs), red (not
-    // documented). The red finding gets real weight — the line turns
-    // red, then there's a genuine pause before the notice underneath
-    // appears, instead of both landing in the same instant.
+    // single continuous pass, not a per-line loop. Every line gets
+    // one brief, quiet lift in brightness the moment the light
+    // passes over it — proportional to where it actually sits in
+    // the block, not a flat interval. The three lines TrustLayer
+    // has something to say about settle into a persistent color
+    // instead: green (confirmed), amber (contradicts the docs), red
+    // (not documented) — and for those two, the light itself warms
+    // to that same color just ahead of the line, so the finding
+    // reads as something the sweep discovered. The red finding
+    // still gets real weight: the line turns red, then a genuine
+    // pause, then the notice underneath.
     function scanLines(onDone) {
       codeEl.classList.add('is-checking');
-      codeLines.forEach((l) => l.classList.remove('d-checked'));
+      codeLines.forEach((l) => l.classList.remove('d-checked', 'is-lit'));
       verdictWarningRow.classList.remove('is-shown');
       verdictRow.classList.remove('is-shown');
 
       const successLine = codeEl.querySelector('.d-line-success');
       const errorLine = codeEl.querySelector('.d-line-flaggable');
 
+      // Proportional to each neutral line's actual position in the
+      // 2.4s sweep (index+0.5 of 9 total lines) — the same math the
+      // amber/green/red moments below already use.
+      const NEUTRAL_TIMES = [133, 400, 933, 1200, 2000, 2267];
+      neutralLines.forEach((line, i) => {
+        const t = NEUTRAL_TIMES[i];
+        if (t == null) return;
+        after(t, () => {
+          line.classList.add('is-lit');
+          after(420, () => line.classList.remove('is-lit'));
+        });
+      });
+
+      after(500, () => scanBar.classList.add('is-warning'));   // the light warms before it reaches the line
       after(670, () => {
         warningLine && warningLine.classList.add('d-checked');
         after(260, () => verdictWarningRow.classList.add('is-shown'));   // the amber finding: exists, but contradicts the docs
       });
+      after(950, () => scanBar.classList.remove('is-warning'));
       after(1470, () => successLine && successLine.classList.add('d-checked'));
+      after(1580, () => scanBar.classList.add('is-error'));     // warms to red ahead of the flagged line too
       after(1730, () => {
         errorLine && errorLine.classList.add('d-checked');
         after(450, () => {                          // the pause that gives the finding weight
           verdictRow.classList.add('is-shown');     // grows in above the amber row and pushes it down — both stay up together
-          codeEl.classList.remove('is-checking');   // sweep's done its pass — fade the bar out, don't leave it parked
-          onDone && onDone();
+          endScan(onDone);
         });
       });
     }
@@ -259,13 +409,10 @@
     // same sweep as state 2, just restarted — proof the "verified"
     // badge is a second check, not a rubber stamp on the fix.
     function rescan(onDone) {
-      codeEl.classList.remove('is-checking');
+      codeEl.classList.remove('is-checking', 'is-scan-done');
       void codeEl.offsetWidth;               // force a reflow so the keyframe animation replays
       codeEl.classList.add('is-checking');
-      after(2400, () => {
-        codeEl.classList.remove('is-checking'); // second pass is done too — bar fades out before the verified badge lands
-        onDone && onDone();
-      });
+      after(2400, () => endScan(onDone));
     }
 
     // The fix lands as an in-place mutation of the same block: the
@@ -298,18 +445,34 @@
     function resetAll() {
       viewPrompt.classList.remove('is-active');
       viewCode.classList.add('is-active');
-      codeEl.classList.remove('is-checking');
-      codeLines.forEach((l) => l.classList.remove('d-checked'));
+      codeEl.classList.remove('is-checking', 'is-scan-done');
+      scanBar.classList.remove('is-warning', 'is-error');
+      codeLines.forEach((l) => l.classList.remove('d-checked', 'is-lit'));
       flagFold.classList.remove('is-collapsed');
       imageTag.textContent = ORIGINAL_TAG;
       codeCursor.classList.remove('is-visible');
       verdictWarningRow.classList.remove('is-shown');
       verdictRow.classList.remove('is-shown');
       verdictSuccessRow.classList.remove('is-shown');
-      demoWindow.classList.remove('is-rechecking');
+      demoWindow.classList.remove('is-rechecking', 'is-done');
       contextLine.textContent = QUESTION_TEXT;
       contextLine.classList.remove('is-meta');
       promptEl.textContent = '';
+      setReplayFocusable(false);
+
+      // The lines' write-in (lineIn) is a CSS keyframe animation tied
+      // to a selector match that's already true by the time a replay
+      // happens (the code view is still .is-active from the previous
+      // cycle) — so just clearing state above leaves every line
+      // sitting at its finished opacity:1 position and the animation
+      // never fires again. Briefly clearing animation inline, forcing
+      // a reflow, then handing control back to the stylesheet is what
+      // makes the browser treat it as a brand new animation, so the
+      // "typing" effect genuinely replays instead of the lines just
+      // appearing pre-written.
+      codeLines.forEach((l) => { l.style.animation = 'none'; });
+      void codeEl.offsetWidth; // force reflow
+      codeLines.forEach((l) => { l.style.animation = ''; });
     }
 
     function run() {
@@ -349,6 +512,7 @@
       });
       after(20200, () => {                              // a hold on the verified result before it's "done"
         demoWindow.classList.add('is-done');
+        setReplayFocusable(true);
         scheduleIdleReplay();
       });
     }
@@ -370,27 +534,57 @@
       contextLine.textContent = META_TEXT;
       contextLine.classList.add('is-meta');
       setPhase(4);
-      demoWindow.classList.add('is-done');
     } else {
       run();
-      demoWindow.addEventListener('click', () => { if (demoWindow.classList.contains('is-done')) run(); });
-      demoReplay.addEventListener('click', (e) => { e.stopPropagation(); run(); });
+      demoReplay.addEventListener('click', () => run());
       window.addEventListener('resize', () => setFlowStep(Number(demoWindow.dataset.phase)));
 
       // setTimeout doesn't pause in a backgrounded tab — it throttles
       // and batches instead, so returning to the tab could previously
       // fire several queued phase changes at once and leave two states
-      // visually overlapping. Cancel everything the instant the tab
-      // goes to background, and start clean the instant it comes back,
-      // rather than trying to resume mid-sequence.
+      // visually overlapping. The instant the tab goes to background,
+      // cancel every pending timer AND snap the window back to a
+      // clean baseline (not just stop scheduling more changes) — so
+      // there's nothing left mid-transition to resume badly. The
+      // instant it's visible again, start clean from the top.
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
           clearTimers();
           window.clearTimeout(idleTimer);
+          resetAll();
         } else {
           run();
         }
       });
+    }
+
+    /* ---------- Glass sheen: a soft light that follows the cursor ----------
+       Purely decorative, so it gets the same treatment as every other
+       cosmetic motion on this page: skipped outright under reduced
+       motion rather than just sped up. Position updates are batched
+       through requestAnimationFrame so a fast mouse move never writes
+       to the DOM more than once per paint. */
+    const sheen = document.getElementById('demoSheen');
+    if (sheen && !prefersReducedMotion) {
+      let sheenFrame = null;
+      let pendingX = 50;
+      let pendingY = 38;
+
+      const paintSheen = () => {
+        sheenFrame = null;
+        demoWindow.style.setProperty('--sheen-x', `${pendingX}%`);
+        demoWindow.style.setProperty('--sheen-y', `${pendingY}%`);
+      };
+
+      demoWindow.addEventListener('mousemove', (e) => {
+        const rect = demoWindow.getBoundingClientRect();
+        pendingX = ((e.clientX - rect.left) / rect.width) * 100;
+        pendingY = ((e.clientY - rect.top) / rect.height) * 100;
+        if (sheenFrame === null) sheenFrame = requestAnimationFrame(paintSheen);
+      });
+
+      demoWindow.addEventListener('mouseenter', () => demoWindow.classList.add('is-hovering'));
+      demoWindow.addEventListener('mouseleave', () => demoWindow.classList.remove('is-hovering'));
     }
   }
 
