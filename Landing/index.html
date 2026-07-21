@@ -9,13 +9,35 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script>
+    // Applied before first paint so a returning visitor's saved
+    // theme (or their system preference, first time round) is
+    // already in place — no flash of the wrong theme on load.
+    (function () {
+      try {
+        var saved = localStorage.getItem('trustlayer_theme');
+        var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (err) {
+        // localStorage/matchMedia unavailable — falls back to the
+        // light default already defined in the stylesheet.
+      }
+    })();
+  </script>
 </head>
 <body>
- 
+
 <nav class="nav" id="nav">
   <div class="nav-inner">
     <span class="nav-logo">TrustLayer</span>
-    <button class="nav-cta" id="navCta" data-scroll-to="hero-cta">Join Waitlist</button>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
+        <span class="theme-toggle-sphere" aria-hidden="true">
+          <span class="theme-toggle-highlight"></span>
+        </span>
+      </button>
+      <button class="nav-cta" id="navCta" data-scroll-to="hero-cta">Join Waitlist</button>
+    </div>
   </div>
 </nav>
  
@@ -127,6 +149,11 @@
           </div>
 
         </div>
+
+        <!-- Purely decorative: a soft light that tracks the cursor,
+             giving the window a polished-glass feel. Never intercepts
+             clicks, never affects the content underneath. -->
+        <div class="demo-window-sheen" id="demoSheen" aria-hidden="true"></div>
       </div>
 
       <!-- The mental model, not a diagram. Only one word is ever active. -->
@@ -152,7 +179,7 @@
   <!-- ACCORDIONS -->
   <section class="accordions">
  
-    <div class="accordion-item" data-accordion>
+    <div class="accordion-item">
       <button class="accordion-trigger" aria-expanded="false">
         <span class="chevron">▸</span>
         <span class="trigger-label">How it works</span>
@@ -186,7 +213,7 @@
  
     <div class="divider"></div>
  
-    <div class="accordion-item" data-accordion>
+    <div class="accordion-item">
       <button class="accordion-trigger" aria-expanded="false">
         <span class="chevron">▸</span>
         <span class="trigger-label">Why TrustLayer exists</span>
@@ -203,7 +230,7 @@
  
     <div class="divider"></div>
  
-    <div class="accordion-item" data-accordion>
+    <div class="accordion-item">
       <button class="accordion-trigger" aria-expanded="false">
         <span class="chevron">▸</span>
         <span class="trigger-label">Frequently Asked Questions</span>
@@ -212,7 +239,7 @@
         <div class="accordion-panel-inner">
           <div class="faq-list">
  
-            <div class="faq-item" data-accordion>
+            <div class="faq-item">
               <button class="faq-trigger" aria-expanded="false">
                 <span class="faq-chevron">▸</span> What exactly does TrustLayer check?
               </button>
@@ -223,7 +250,7 @@
               </div>
             </div>
  
-            <div class="faq-item" data-accordion>
+            <div class="faq-item">
               <button class="faq-trigger" aria-expanded="false">
                 <span class="faq-chevron">▸</span> Is this a linter?
               </button>
@@ -234,7 +261,7 @@
               </div>
             </div>
  
-            <div class="faq-item" data-accordion>
+            <div class="faq-item">
               <button class="faq-trigger" aria-expanded="false">
                 <span class="faq-chevron">▸</span> What do I do with the corrected prompt?
               </button>
@@ -245,7 +272,7 @@
               </div>
             </div>
  
-            <div class="faq-item" data-accordion>
+            <div class="faq-item">
               <button class="faq-trigger" aria-expanded="false">
                 <span class="faq-chevron">▸</span> Which tools will it support at launch?
               </button>
@@ -256,7 +283,29 @@
               </div>
             </div>
  
-            <div class="faq-item" data-accordion>
+            <div class="faq-item">
+              <button class="faq-trigger" aria-expanded="false">
+                <span class="faq-chevron">▸</span> How is this different from Context7?
+              </button>
+              <div class="faq-panel">
+                <div class="faq-panel-inner">
+                  <p>They solve different halves of the same problem, and work well together. Context7 improves what goes <em>in</em> — pulling accurate, current documentation into the AI's context so it reasons from the real source instead of stale training data. TrustLayer checks what comes <em>out</em> — verifying the answer the AI actually generated, catching hallucinated flags, contradictions with the docs, and risky commands, then handing back a corrected prompt for any AI to try again. Better context going in, a verified answer coming out — not a replacement for Context7, a complement to it.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-trigger" aria-expanded="false">
+                <span class="faq-chevron">▸</span> Can TrustLayer warn me before I run a dangerous command?
+              </button>
+              <div class="faq-panel">
+                <div class="faq-panel-inner">
+                  <p>That's part of where we're headed — and it matters because "documented" and "safe" aren't the same thing. A command can be exactly as the docs describe it, spelled correctly, using a real and current flag, and still be extremely dangerous to run: an SSH lockout that ends your only session, a TCP redirect that silently reroutes live traffic, an HTTP interruption that drops requests mid-flight, permanent data loss, a destructive operation with no undo. Checking a command against the docs only answers "is this real" — it says nothing about "what will this actually do to my system." The plan is for TrustLayer to flag that second question too, before you run anything, not after. Not live yet; this is the direction the product is built toward.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="faq-item">
               <button class="faq-trigger" aria-expanded="false">
                 <span class="faq-chevron">▸</span> Is there a browser extension?
               </button>
@@ -267,7 +316,7 @@
               </div>
             </div>
  
-            <div class="faq-item" data-accordion>
+            <div class="faq-item">
               <button class="faq-trigger" aria-expanded="false">
                 <span class="faq-chevron">▸</span> Does what I paste get stored anywhere?
               </button>
@@ -278,7 +327,7 @@
               </div>
             </div>
  
-            <div class="faq-item" data-accordion>
+            <div class="faq-item">
               <button class="faq-trigger" aria-expanded="false">
                 <span class="faq-chevron">▸</span> When can I get access?
               </button>
