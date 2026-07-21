@@ -61,6 +61,12 @@
     document.documentElement.setAttribute('data-theme', theme);
     syncThemeToggleA11y(theme);
     persistTheme(theme);
+
+    // El logo del nav ya cambia solo por CSS (data-theme). El favicon
+    // no puede resolverse con CSS, así que se actualiza aquí, en el
+    // mismo punto donde cambia todo lo demás ligado al tema.
+    const favicon = document.getElementById('favicon');
+    if (favicon) favicon.href = theme === 'dark' ? 'assets/Logo_Dark.svg' : 'assets/Logo_Light.svg';
   }
 
   if (themeToggle) {
