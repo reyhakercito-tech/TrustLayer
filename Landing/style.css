@@ -513,6 +513,24 @@ html.theme-transitioning::view-transition-new(root) {
   position: absolute;
   transform: scale(0.9);
 }
+
+.cta-note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  margin-top: var(--sp-4);
+  max-height: 44px;
+  opacity: 1;
+  transition: opacity 0.3s var(--ease), max-height 0.3s var(--ease), margin-top 0.3s var(--ease);
+}
+
+.cta-wrap.open .cta-note,
+.cta-wrap.success .cta-note {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+  pointer-events: none;
+}
  
 .waitlist-form {
   display: flex;
@@ -1160,6 +1178,13 @@ html.theme-transitioning::view-transition-new(root) {
   font-size: 15px;
   letter-spacing: -0.003em;
   color: var(--ink-secondary);
+}
+
+.social-text-secondary {
+  font-size: 13.5px;
+  color: var(--ink-tertiary, var(--ink-secondary));
+  margin-top: var(--sp-2);
+  opacity: 0.85;
 }
  
 .divider {
